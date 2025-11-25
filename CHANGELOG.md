@@ -1,7 +1,55 @@
-# 📋 CHANGELOG: SaaS Factory Setup - Context Engineering Integration
+# 📋 CHANGELOG: SaaS Factory Setup
+
+---
+
+## 🔄 Versión 2.1 - Formulario de Planeación y Reorganización
+
+**Fecha**: 2025-11-25
+
+### ✨ Nuevas Adiciones
+
+#### **Formulario de Planeación de Proyectos**
+**Archivo**: `FORMULARIO_PROYECTO.md`
+
+**Qué es**: Template completo para definir proyectos antes de iniciar desarrollo
+
+**Ubicación**: Añadido a los 4 setups:
+```
+setup/FORMULARIO_PROYECTO.md
+nextjs-claude-setup/FORMULARIO_PROYECTO.md
+python-claude-setup/FORMULARIO_PROYECTO.md
+auth-nextjs-template/FORMULARIO_PROYECTO.md
+```
+
+**Propósito**:
+- Guiar usuarios a definir problemas de negocio claramente
+- Identificar solución, usuarios target, flujos de datos
+- Establecer KPIs medibles antes de escribir código
+- Evitar proyectos genéricos sin modelo de negocio
+
+**Secciones**:
+1. El Dolor (Business Problem)
+2. La Solución (The Fix)
+3. El Usuario (Target Role)
+4. Los Datos (Input/Output)
+5. El Éxito (KPIs)
+
+### 🔧 Cambios Organizacionales
+
+#### **Renombrado: plantilla-autenticacion → auth-nextjs-template**
+
+**Razón**: Nombre más descriptivo y consistente con nomenclatura en inglés del resto de templates
+
+**Impacto**:
+- Aliases de instalación necesitan actualización
+- Referencias en documentación ajustadas
+- Mantiene toda la funcionalidad existente
+
+---
+
+## 📦 Versión 2.0 - Context Engineering Integration
 
 **Fecha**: 2025-10-29
-**Versión**: 2.0 - Context Engineering Enhanced
 
 ---
 
