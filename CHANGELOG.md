@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2025-12-01
+
+### Added
+- **Formularios Directory**: Created `.claude/Formularios/` in all 3 setups (setup, nextjs-claude-setup, python-claude-setup)
+- **FORMULARIO_LANDING.md**: Added landing page definition form to all setups for AI-driven landing page creation
+- **FORMULARIO_PROYECTO.md**: Added project definition form to setup/ (was already in nextjs/python)
+
+### Changed
+- **File Organization**: Moved `FORMULARIO_PROYECTO.md` from root to `.claude/Formularios/` in nextjs-claude-setup and python-claude-setup
+- All project forms now organized under `.claude/Formularios/` for consistency
+
+---
+
 ## [1.3.0] - 2025-11-28
 
 ### Added
