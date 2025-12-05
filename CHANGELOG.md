@@ -2,6 +2,99 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2025-12-05
+
+### 🤖 Agent-First Architecture Complete
+
+**The Intersection: Ford + Musk + Rauch**
+
+This release embodies the vision of three pioneers:
+- **Henry Ford**: One perfected stack (no options, just execution)
+- **Elon Musk**: The machine that builds the machine (commands > apps)
+- **Guillermo Rauch**: Agent-First development (speed = intelligence)
+
+### Added
+
+#### Agent Role & Philosophy
+- **"Tu Rol: Arquitecto Agent-First"** section in `saas-factory/CLAUDE.md`
+- **DWY (Done With You) paradigm**: Human decides WHAT, Agent executes HOW
+- **The 3 Principles**:
+  1. Ford: Golden Path (no technical options)
+  2. Musk: Process > Product (reusable systems)
+  3. Rauch: Speed = Intelligence (100 iterations in 30 seconds)
+
+#### Complete Project Structure
+- **Feature-First Architecture** fully implemented in `src/`
+- **Route Groups**: `app/(auth)/` and `app/(main)/` with layouts
+- **Example Features**: `auth/` and `dashboard/` with complete folder structure
+- **Shared Infrastructure**: 8 organized subdirectories (components, hooks, stores, types, utils, lib, constants, assets)
+- **Template System**: `features/.template/` for rapid feature scaffolding
+- **Documentation**: READMEs in every major directory explaining purpose and usage
+
+#### Step-by-Step MCP Guide
+- Added complete "Prendiendo el Next.js 16 MCP" guide to README.md
+- 8-step process from `saas-factory` to running MCP
+- Verification tests to confirm MCPs are working
+
+### Changed
+
+#### Documentation Overhaul
+- **README.md**: Condensed from 424 to 228 lines (50% reduction, 20/80 principle)
+- **Philosophy First**: Ford, Musk, Rauch quotes moved to top of README
+- **Removed Technical Details**: Moved Agent-First Development details from README to CLAUDE.md
+- **Workflow Consolidation**: Merged "Workflow Típico" and "Step-by-Step MCP" into single section
+
+#### Stack Alignment
+- **Updated all references**: Next.js 16, React 19, Tailwind 3.4
+- **Removed Tailwind 4**: Unstable, reverted to 3.4 stable
+- **Updated `/new-app` command**: Stack Confirmado section reflects correct versions
+
+#### MCP Configuration
+- **Fixed package names** in `.mcp.json`:
+  - `@vercel/next-devtools-mcp@latest` (was `next-devtools-mcp`)
+  - `@playwright/mcp@latest` (was `@anthropic-ai/playwright-mcp`)
+  - Reordered: Next.js → Playwright → Supabase (Cerebro → Ojos → Backend)
+
+### Technical
+
+#### Files Created (40 new files)
+```
+src/
+├── app/(auth)/
+│   ├── layout.tsx
+│   ├── login/page.tsx
+│   └── signup/page.tsx
+├── app/(main)/
+│   ├── layout.tsx
+│   └── dashboard/page.tsx
+├── features/
+│   ├── .template/ (5 folders + README)
+│   ├── auth/ (5 folders)
+│   ├── dashboard/ (5 folders)
+│   └── README.md
+└── shared/
+    ├── 8 subdirectories (.gitkeep in each)
+    └── README.md
+```
+
+#### Commit Stats
+- **40 files changed**
+- **+522 insertions, -149 deletions**
+- **Net: +373 lines** (despite 50% README reduction due to new structure)
+
+### Philosophy Impact
+
+**Before V2.1**: Agent had tools but no clear identity
+**After V2.1**: Agent knows exactly who it is and how to work with humans
+
+The agent now understands:
+- Its role (Architect, not autonomous builder)
+- Its constraints (Golden Path only, no invented options)
+- Its collaboration model (DWY: Human designs, Agent executes)
+- Its superpowers (Turbopack, MCPs, Feature-First context)
+
+---
+
 ## [2.0.0] - 2025-12-05
 
 ### 🎯 Philosophy Change: "The Machine that Builds the Machine"
