@@ -1,8 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { createTransaction } from '../actions/financeActions';
-import { X, Loader2 } from 'lucide-react';
+import { getPatients } from '@/features/patients/actions/patientActions';
+import { Patient } from '@/features/patients/types';
+import { Loader2, DollarSign, CreditCard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface CreateTransactionModalProps {
     isOpen: boolean;
@@ -10,135 +18,150 @@ interface CreateTransactionModalProps {
 }
 
 export function CreateTransactionModal({ isOpen, onClose }: CreateTransactionModalProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [form, setForm] = useState({
-        amount: '',
-        type: 'income',
-        category: '',
-        description: '',
-        date: new Date().toISOString().split('T')[0],
-        status: 'paid'
-    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [patients, setPatients] = useState<Patient[]>([]);
 
-    if (!isOpen) return null;
+    // Form state
+    const [description, setDescription] = useState('');
+    const [amount, setAmount] = useState('');
+    const [type, setType] = useState('income');
+    const [patientId, setPatientId] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('cash');
+
+    useEffect(() => {
+        if (isOpen) {
+            loadPatients();
+        }
+    }, [isOpen]);
+
+    const loadPatients = async () => {
+        try {
+            const data = await getPatients();
+            setPatients(data);
+        } catch (error) {
+            console.error('Failed to load patients', error);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSubmitting(true);
-        await createTransaction({
-            ...form,
-            amount: parseFloat(form.amount),
-            type: form.type as 'income' | 'expense',
-            status: form.status as 'paid' | 'pending' | 'cancelled'
-        });
-        setIsSubmitting(false);
-        onClose();
-        // Reset form or keep common values?
-        setForm({ ...form, amount: '', description: '' });
+        setIsLoading(true);
+
+        try {
+            await createTransaction({
+                description,
+                amount: parseFloat(amount),
+                type: type as 'income' | 'expense',
+                patient_id: patientId || undefined,
+                payment_method: paymentMethod,
+                status: 'completed'
+            });
+
+            toast.success('Transacción registrada');
+            onClose();
+            // Reset form
+            setDescription('');
+            setAmount('');
+            setType('income');
+            setPatientId('');
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al registrar transacción');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8 animate-in zoom-in-95 duration-200 relative">
-                <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
-                    <X className="w-5 h-5" />
-                </button>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[425px] bg-white/90 backdrop-blur-xl border-white/20">
+                <DialogHeader>
+                    <DialogTitle>Nueva Transacción</DialogTitle>
+                </DialogHeader>
 
-                <h2 className="text-2xl font-bold text-slate-800 mb-6">Nueva Transacción</h2>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700">Tipo</label>
-                            <select
-                                className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-200 bg-white"
-                                value={form.type}
-                                onChange={e => setForm({ ...form, type: e.target.value })}
-                            >
-                                <option value="income">Ingreso</option>
-                                <option value="expense">Gasto</option>
-                            </select>
+                        <div className="space-y-2">
+                            <Label>Tipo</Label>
+                            <Select value={type} onValueChange={setType}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="income">Ingreso</SelectItem>
+                                    <SelectItem value="expense">Gasto</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700">Monto</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                required
-                                className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                                value={form.amount}
-                                onChange={e => setForm({ ...form, amount: e.target.value })}
-                            />
+                        <div className="space-y-2">
+                            <Label>Monto</Label>
+                            <div className="relative">
+                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    className="pl-9"
+                                    placeholder="0.00"
+                                    required
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium text-slate-700">Categoría</label>
-                        <input
+                    <div className="space-y-2">
+                        <Label>Descripción</Label>
+                        <Input
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Ej: Consulta General"
                             required
-                            list="categories"
-                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                            value={form.category}
-                            onChange={e => setForm({ ...form, category: e.target.value })}
-                        />
-                        <datalist id="categories">
-                            <option value="Consulta" />
-                            <option value="Procedimiento" />
-                            <option value="Farmacia" />
-                            <option value="Alquiler" />
-                            <option value="Nómina" />
-                            <option value="Insumos" />
-                        </datalist>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium text-slate-700">Descripción</label>
-                        <input
-                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                            value={form.description}
-                            onChange={e => setForm({ ...form, description: e.target.value })}
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700">Fecha</label>
-                            <input
-                                type="date"
-                                required
-                                className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                                value={form.date}
-                                onChange={e => setForm({ ...form, date: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700">Estado</label>
-                            <select
-                                className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-200 bg-white"
-                                value={form.status}
-                                onChange={e => setForm({ ...form, status: e.target.value })}
-                            >
-                                <option value="paid">Pagado</option>
-                                <option value="pending">Pendiente</option>
-                                <option value="cancelled">Cancelado</option>
-                            </select>
-                        </div>
+                    <div className="space-y-2">
+                        <Label>Paciente (Opcional)</Label>
+                        <Select value={patientId} onValueChange={setPatientId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">-- Ninguno --</SelectItem>
+                                {patients.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>
+                                        {p.first_name} {p.last_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4">
-                        <button type="button" onClick={onClose} className="px-6 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors">
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="px-6 py-2 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20 disabled:opacity-50"
-                        >
-                            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Guardar'}
-                        </button>
+                    <div className="space-y-2">
+                        <Label>Método de Pago</Label>
+                        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="cash">Efectivo</SelectItem>
+                                <SelectItem value="credit_card">Tarjeta Crédito</SelectItem>
+                                <SelectItem value="debit_card">Tarjeta Débito</SelectItem>
+                                <SelectItem value="transfer">Transferencia</SelectItem>
+                                <SelectItem value="insurance">Seguro</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+                        <Button type="submit" disabled={isLoading} className={type === 'income' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}>
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            Registrar
+                        </Button>
+                    </DialogFooter>
                 </form>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }

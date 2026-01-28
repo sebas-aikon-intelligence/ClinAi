@@ -11,10 +11,10 @@ export function useFinance() {
 
     const fetchTransactions = useCallback(async () => {
         setIsLoading(true);
-        const data = await getTransactions(dateRange.start, dateRange.end);
+        const data = await getTransactions();
         setTransactions(data);
         setIsLoading(false);
-    }, [dateRange]);
+    }, []);
 
     useEffect(() => {
         fetchTransactions();
@@ -24,14 +24,14 @@ export function useFinance() {
         return transactions.reduce((acc, curr) => {
             const amount = Number(curr.amount);
             if (curr.type === 'income') {
-                if (curr.status === 'paid') {
+                if (curr.status === 'completed') {
                     acc.totalRevenue += amount;
                     acc.netIncome += amount;
                 } else if (curr.status === 'pending') {
                     acc.pendingIncome += amount;
                 }
             } else {
-                if (curr.status === 'paid') {
+                if (curr.status === 'completed') {
                     acc.totalExpenses += amount;
                     acc.netIncome -= amount;
                 }

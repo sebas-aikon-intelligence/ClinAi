@@ -15,8 +15,8 @@ export async function sendManualMessage(payload: SendMessagePayload): Promise<bo
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        chat_id: payload.chat_id,
-        message: payload.message,
+        chat_id: payload.chatId,
+        message: payload.text,
         sender_type: 'human',
       }),
     });

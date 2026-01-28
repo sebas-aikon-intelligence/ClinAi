@@ -18,12 +18,6 @@ interface PatientDetailProps {
     files: PatientFile[];
     prescriptions: Prescription[];
     activities: Activity[];
-    tags: Tag[]; // All available tags? Or patient tags? Ideally we fetch patient tags. 
-    // For simplicity assuming we might fetch patient tags inside or pass them.
-    // The 'tags' prop here might be "Patient's Tags". 
-    // The TagSelector needs "All Tags" to select from. 
-    // I need to fetch assigned tags. 
-    // Let's assume 'assignedTags' are passed or I fetch them.
     assignedTags: string[]; // ID list
 }
 

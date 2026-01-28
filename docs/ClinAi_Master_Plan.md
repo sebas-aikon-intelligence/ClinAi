@@ -53,17 +53,31 @@ F. Configuracion
 - Plantillas de mensajes
 - Gestion de etiquetas
 
-### Estado Actual del Proyecto
+### Estado Actual del Proyecto (Actualizado 2026-01-28)
 | Modulo | Estado | Notas |
 | :--- | :--- | :--- |
-| Dashboard | 60% | KPIs funcionales, ingresos mockeados |
-| Pacientes | 30% | Solo listado basico |
-| Calendario | 20% | Solo diseno, sin BD |
-| Mensajes | 80% | Telegram funcional con n8n |
-| Finanzas | 20% | Mockup estatico |
-| Inventario | 20% | A ELIMINAR |
-| Tareas | 70% | Server Actions listos |
-| Configuracion | 0% | No existe |
+| Dashboard | 80% | KPIs funcionales, componentes completos |
+| Pacientes | 100% | Galeria, Pipeline Kanban, Detalle 360, Files, Prescriptions, Timeline |
+| Calendario | 100% | FullCalendar integrado, 3 vistas, BD conectada, Realtime |
+| Mensajes | 65% | Telegram funcional, FALTA: ChannelFilter, TemplatesPanel, AttachmentButton |
+| Finanzas | 90% | Conectado a BD, errores de tipos CORREGIDOS |
+| Inventario | ELIMINADO | Ya no existe en el sistema |
+| Tareas | 80% | Pagina basica, Server Actions listos |
+| Configuracion | 80% | Profile, Team, Templates, Tags - funcionando |
+
+### Resumen de Fases
+| Fase | Nombre | Estado |
+| :--- | :--- | :--- |
+| 0 | Limpieza y Navegacion Base | ✅ COMPLETADA |
+| 1 | Sistema de Etiquetas (Tags) | ✅ COMPLETADA |
+| 2 | Pacientes - Modelo de Datos | ✅ COMPLETADA |
+| 3 | Pacientes - UI Completa | ✅ COMPLETADA |
+| 4 | Calendario Funcional | ✅ COMPLETADA |
+| 5 | Configuracion n8n Multi-Canal | ❌ NO INICIADA |
+| 6 | Mensajes Estilo ManyChat | 🔶 65% - Falta multi-canal |
+| 7 | Finanzas con Datos Reales | ✅ COMPLETADA (errores corregidos) |
+| 8 | Configuracion Completa | 🔶 80% - TeamManagement es mock |
+| 9 | Validacion Final y Polish | ❌ NO INICIADA |
 
 ## FASES DE IMPLEMENTACION
 

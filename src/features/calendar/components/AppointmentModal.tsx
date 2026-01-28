@@ -1,80 +1,289 @@
 'use client';
+import { createPortal } from 'react-dom';
 
-import React, { useState } from 'react';
-import { Appointment } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { updateAppointment, deleteAppointment } from '../actions/appointmentActions';
-import { X, Loader2, Trash2 } from 'lucide-react';
+import { Appointment } from '../types';
+import { Loader2, Calendar as CalendarIcon, Clock, User, FileText, Activity, Trash2, CheckCircle, XCircle, Pencil, Save, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface AppointmentModalProps {
-    appointment: Appointment | null;
+    isOpen: boolean;
     onClose: () => void;
+    appointment: Appointment | null;
 }
 
-export function AppointmentModal({ appointment, onClose }: AppointmentModalProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [notes, setNotes] = useState(appointment?.notes || '');
+export function AppointmentModal({ isOpen, onClose, appointment }: AppointmentModalProps) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
-    if (!appointment) return null;
+    // Edit form state
+    const [title, setTitle] = useState('');
+    const [date, setDate] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
+    const [type, setType] = useState('consultation');
+    const [notes, setNotes] = useState('');
 
-    const handleUpdate = async () => {
-        setIsSubmitting(true);
-        await updateAppointment(appointment.id, { notes });
-        setIsSubmitting(false);
-        onClose();
+    useEffect(() => {
+        if (appointment) {
+            setTitle(appointment.title);
+            const start = new Date(appointment.start_time);
+            const end = new Date(appointment.end_time);
+            setDate(start.toISOString().split('T')[0]);
+            setStartTime(start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+            setEndTime(end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+            setType(appointment.type);
+            setNotes(appointment.notes || '');
+            setIsEditing(false); // Reset edit mode on new appointment
+        }
+    }, [appointment]);
+
+
+
+    const handleStatusChange = async (newStatus: Appointment['status']) => {
+        setIsLoading(true);
+        try {
+            await updateAppointment(appointment.id, { status: newStatus });
+            toast.success(`Cita marcada como ${newStatus}`);
+            onClose();
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al actualizar la cita');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            const startDateTime = new Date(`${date}T${startTime}`);
+            const endDateTime = new Date(`${date}T${endTime}`);
+
+            await updateAppointment(appointment.id, {
+                title,
+                start_time: startDateTime,
+                end_time: endDateTime,
+                type: type as any,
+                notes
+            });
+            toast.success('Cita actualizada correctamente');
+            setIsEditing(false);
+            onClose();
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al guardar cambios');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleDelete = async () => {
-        if (!confirm('¿Eliminar cita?')) return;
-        setIsSubmitting(true);
-        await deleteAppointment(appointment.id);
-        setIsSubmitting(false);
-        onClose();
+        if (!confirm('¿Estás seguro de eliminar esta cita?')) return;
+
+        setIsLoading(true);
+        try {
+            await deleteAppointment(appointment.id);
+            toast.success('Cita eliminada');
+            onClose();
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al eliminar la cita');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in zoom-in-95 duration-200 relative">
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                    <X className="w-5 h-5" />
-                </button>
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
 
-                <h2 className="text-xl font-bold text-slate-800 mb-2">{appointment.title}</h2>
-                <p className="text-sm text-slate-500 mb-4">
-                    {new Date(appointment.start).toLocaleString()} - {new Date(appointment.end).toLocaleTimeString()}
-                </p>
+    const formatTime = (dateStr: string) => {
+        return new Date(dateStr).toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
 
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-sm font-medium text-slate-700 block mb-1">Notas</label>
-                        <textarea
-                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-200 h-32 resize-none"
-                            value={notes}
-                            onChange={e => setNotes(e.target.value)}
-                        />
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+
+    if (!mounted || !appointment) return null;
+
+    const modalContent = (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[500px] bg-white/90 backdrop-blur-xl border-white/20 z-[100]">
+                <DialogHeader>
+                    <div className="flex justify-between items-start">
+                        <DialogTitle className="text-xl font-bold text-slate-800 pr-8">
+                            {isEditing ? 'Editar Cita' : "Detalles de la Cita"}
+                        </DialogTitle>
+                        {!isEditing && (
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize border ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-700 border-green-200' :
+                                appointment.status === 'completed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                    appointment.status === 'cancelled' ? 'bg-red-100 text-red-700 border-red-200' :
+                                        'bg-amber-100 text-amber-700 border-amber-200'
+                                }`}>
+                                {appointment.status.replace('_', ' ')}
+                            </span>
+                        )}
                     </div>
+                </DialogHeader>
 
-                    <div className="flex justify-between items-center pt-2">
-                        <button
-                            onClick={handleDelete}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                            <Trash2 className="w-5 h-5" />
-                        </button>
-                        <div className="flex gap-2">
-                            <button onClick={onClose} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-lg transition-colors">
-                                Cerrar
-                            </button>
-                            <button
-                                onClick={handleUpdate}
-                                disabled={isSubmitting}
-                                className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20 disabled:opacity-50"
-                            >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Guardar'}
-                            </button>
+                {isEditing ? (
+                    <form onSubmit={handleSave} className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <Label>Título</Label>
+                            <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Fecha</Label>
+                                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tipo</Label>
+                                <Select value={type} onValueChange={setType}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="consultation">Consulta</SelectItem>
+                                        <SelectItem value="follow_up">Seguimiento</SelectItem>
+                                        <SelectItem value="procedure">Procedimiento</SelectItem>
+                                        <SelectItem value="emergency">Urgencia</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Inicio</Label>
+                                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Fin</Label>
+                                <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Notas</Label>
+                            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="h-20" />
+                        </div>
+                        <DialogFooter className="gap-2">
+                            <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                            <Button type="submit" className="bg-primary-600 hover:bg-primary-700 text-white">
+                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                                Guardar
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                ) : (
+                    <div className="py-2 space-y-4">
+                        <div className="text-xl font-bold text-slate-800">{appointment.title}</div>
+
+                        <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <CalendarIcon className="w-5 h-5 text-primary-500 mt-0.5" />
+                            <div>
+                                <div className="font-medium text-slate-800">{formatDate(appointment.start_time)}</div>
+                                <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <Activity className="w-5 h-5 text-indigo-500" />
+                            <div className="capitalize">{appointment.type}</div>
+                        </div>
+
+                        {appointment.notes && (
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                                    <FileText className="w-4 h-4" /> Notas
+                                </div>
+                                <p className="text-sm text-slate-600 pl-6 whitespace-pre-wrap">{appointment.notes}</p>
+                            </div>
+                        )}
+
+                        <DialogFooter className="flex-col sm:flex-row gap-2 sm:justify-between w-full pt-4 border-t border-slate-100">
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsEditing(true)}
+                                    disabled={isLoading}
+                                    className="text-slate-600 hover:bg-slate-50"
+                                >
+                                    <Pencil className="w-4 h-4 mr-2" /> Editar
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={handleDelete}
+                                    disabled={isLoading}
+                                    className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                                >
+                                    <Trash2 className="w-4 h-4 lg:mr-2" /> <span className="hidden lg:inline">Eliminar</span>
+                                </Button>
+                            </div>
+
+                            <div className="flex gap-2">
+                                {appointment.status !== 'cancelled' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleStatusChange('cancelled')}
+                                        disabled={isLoading}
+                                    >
+                                        Cancel
+                                    </Button>
+                                )}
+
+                                {appointment.status !== 'confirmed' && appointment.status !== 'completed' && (
+                                    <Button
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                        size="sm"
+                                        onClick={() => handleStatusChange('confirmed')}
+                                        disabled={isLoading}
+                                    >
+                                        Confirm
+                                    </Button>
+                                )}
+
+                                {appointment.status === 'confirmed' && (
+                                    <Button
+                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                        size="sm"
+                                        onClick={() => handleStatusChange('completed')}
+                                        disabled={isLoading}
+                                    >
+                                        Complete
+                                    </Button>
+                                )}
+                            </div>
+                        </DialogFooter>
                     </div>
-                </div>
-            </div>
-        </div>
+                )}
+            </DialogContent>
+        </Dialog>
     );
+
+    return createPortal(modalContent, document.body);
 }

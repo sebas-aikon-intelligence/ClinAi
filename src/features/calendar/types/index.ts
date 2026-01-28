@@ -1,15 +1,29 @@
 export interface Appointment {
     id: string;
-    title: string;
-    start: string; // ISO String
-    end: string;
-    patient_id: string;
-    notes?: string;
-    status: 'scheduled' | 'completed' | 'cancelled' | 'noshow';
-    specialist?: string;
-    created_at?: string;
-    extendedProps?: any; // For FullCalendar compatibility if needed
+    patient_id?: string | null;
+    doctor_id?: string | null;
+    title?: string | null;
+    start_time: string;
+    end_time: string;
+    type?: 'consultation' | 'follow_up' | 'procedure' | 'emergency' | null;
+    status: 'pending' | 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+    notes?: string | null;
+    created_at: string;
 }
 
-export type CreateAppointmentInput = Omit<Appointment, 'id' | 'created_at' | 'extendedProps'>;
-export type UpdateAppointmentInput = Partial<CreateAppointmentInput>;
+export interface CreateAppointmentInput {
+    patient_id?: string | null;
+    doctor_id?: string | null;
+    title?: string | null;
+    start_time: Date;
+    end_time: Date;
+    type?: Appointment['type'];
+    notes?: string | null;
+}
+
+export interface UpdateAppointmentInput extends Partial<CreateAppointmentInput> {
+    status?: Appointment['status'];
+}
+
+export type CalendarView = 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay';
+

@@ -12,11 +12,11 @@ export function RevenueChart({ transactions }: RevenueChartProps) {
     // Process data for the chart (grouped by date)
     const data = React.useMemo(() => {
         const grouped = transactions.reduce((acc, curr) => {
-            const date = new Date(curr.date).toLocaleDateString();
+            const date = new Date(curr.created_at).toLocaleDateString();
             if (!acc[date]) {
                 acc[date] = { date, income: 0, expense: 0 };
             }
-            if (curr.status === 'paid') {
+            if (curr.status === 'completed') {
                 if (curr.type === 'income') acc[date].income += Number(curr.amount);
                 else acc[date].expense += Number(curr.amount);
             }

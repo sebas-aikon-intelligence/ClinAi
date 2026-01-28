@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Prescription } from '../types';
 import { createPrescription, sendPrescription } from '../actions/patientActions';
-import { Send, Plus, FileText, Loader2 } from 'lucide-react';
+import { Send, Plus, FileText, Loader2, Mail } from 'lucide-react';
 
 interface PatientPrescriptionsProps {
     patientId: string;

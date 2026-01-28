@@ -45,8 +45,14 @@ function SortablePatient({ patient }: { patient: Patient }) {
 }
 
 export function PatientPipeline({ patients }: PatientPipelineProps) {
+    const [localPatients, setLocalPatients] = React.useState(patients);
     const [activeId, setActiveId] = React.useState<string | null>(null);
-    const [activePatient, setActivePatient] = React.useState<Patient | null>(null);
+
+    React.useEffect(() => {
+        setLocalPatients(patients);
+    }, [patients]);
+
+    const activePatient = activeId ? localPatients.find(p => p.id === activeId) : null;
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -58,35 +64,38 @@ export function PatientPipeline({ patients }: PatientPipelineProps) {
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
-        setActivePatient(event.active.data.current?.patient || patients.find(p => p.id === event.active.id));
     };
 
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveId(null);
-        setActivePatient(null);
 
-        if (over && active.id !== over.id) {
-            // Find which column we dropped into
-            // The over.id could be a column OR another item
-            // If it's a column, we update to that column
-            // If it's an item, we update to that item's column (but sorting logic is mocked here primarily just for stage change)
+        if (!over) return;
 
-            let newStage = COLUMNS.find(c => c.id === over.id)?.id;
+        const activePatientId = active.id as string;
+        const activePatient = localPatients.find(p => p.id === activePatientId);
 
-            // If dropped on an item, find that item's stage
-            if (!newStage) {
-                const overPatient = patients.find(p => p.id === over.id);
-                if (overPatient) {
-                    newStage = overPatient.pipeline_stage;
-                }
+        if (!activePatient) return;
+
+        let newStage = COLUMNS.find(c => c.id === over.id)?.id;
+
+        // If dropped on an item, find that item's stage
+        if (!newStage) {
+            const overPatient = localPatients.find(p => p.id === over.id);
+            if (overPatient) {
+                newStage = overPatient.pipeline_stage;
             }
+        }
 
-            if (newStage && newStage !== active.data.current?.patient?.pipeline_stage) {
-                // Optimistic update or just trigger server action
-                // For now, trigger action and let Revalidation handle UI
-                await updatePipelineStage(active.id as string, newStage);
-            }
+        if (newStage && newStage !== activePatient.pipeline_stage) {
+            // Optimistic update
+            const updatedPatients = localPatients.map(p =>
+                p.id === activePatientId ? { ...p, pipeline_stage: newStage as Patient['pipeline_stage'] } : p
+            );
+            setLocalPatients(updatedPatients);
+
+            // Trigger server action
+            await updatePipelineStage(activePatientId, newStage);
         }
     };
 
@@ -99,35 +108,22 @@ export function PatientPipeline({ patients }: PatientPipelineProps) {
         >
             <div className="flex h-full overflow-x-auto pb-4 gap-6 px-1">
                 {COLUMNS.map(column => {
-                    const columnPatients = patients.filter(p => p.pipeline_stage === column.id);
+                    const columnPatients = localPatients.filter(p => p.pipeline_stage === column.id);
 
                     return (
-                        <div key={column.id} className="w-80 flex-shrink-0 flex flex-col h-full rounded-2xl bg-white/40 backdrop-blur-sm border border-white/40 shadow-sm">
-                            <div className={cn("p-4 border-b rounded-t-2xl font-bold flex justify-between items-center", column.color)}>
+                        <div key={column.id} className="w-[350px] flex-shrink-0 flex flex-col h-full rounded-2xl bg-slate-50/50 backdrop-blur-sm border border-slate-200/50 shadow-sm mr-4">
+                            <div className={cn("p-4 border-b border-slate-100 rounded-t-2xl font-bold flex justify-between items-center", column.color)}>
                                 <span>{column.title}</span>
-                                <span className="bg-white/50 px-2 py-0.5 rounded-full text-xs">{columnPatients.length}</span>
+                                <span className="bg-white/60 px-2.5 py-0.5 rounded-full text-xs shadow-sm ring-1 ring-black/5">{columnPatients.length}</span>
                             </div>
 
                             {/* Droppable Area */}
-                            {/* We use the column ID as a droppable zone if empty, but SortableContext mainly handles sorting */}
                             <SortableContext
                                 id={column.id}
                                 items={columnPatients.map(p => p.id)}
                                 strategy={verticalListSortingStrategy}
                             >
-                                <div className="flex-1 p-3 overflow-y-auto min-h-[100px]" >
-                                    {/* Note: In dnd-kit, if a list is empty, we need a droppable area for the container. 
-                        SortableContext doesn't automatically make the container dropable if items are empty.
-                        Simplification: Assuming we drop ON the container id if items are empty is handled by logic above.
-                        Wait, we need to register the column as a droppable if we want to drop into empty columns.
-                        My handleDragEnd logic handles dropping on 'over.id' which could be column id if I make it droppable.
-                        But SortableContext handles items.
-                        I'll wrap this div in a Droppable if I had one, but for simplicity I relies on dropping on items or generic handling.
-                        Actually, dropping on empty lists is tricky with just SortableContext. 
-                        I'll rely on the logic finding the column if dropped "near" it or just skip empty list drop for this MVP step 
-                        UNLESS I add a useDroppable hook for the column.
-                        Let's add useDroppable for column to be safe.
-                    */}
+                                <div className="flex-1 p-4 overflow-y-auto min-h-[100px] scrollbar-hide pb-24" >
                                     <DroppableColumn id={column.id}>
                                         {columnPatients.map(patient => (
                                             <SortablePatient key={patient.id} patient={patient} />

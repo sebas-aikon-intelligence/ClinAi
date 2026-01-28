@@ -1,13 +1,34 @@
 export interface Transaction {
     id: string;
-    amount: number;
     type: 'income' | 'expense';
-    category: string;
-    description?: string;
-    date: string;
-    status: 'paid' | 'pending' | 'cancelled';
+    amount: number;
+    description: string;
     patient_id?: string;
+    product_service?: string;
+    payment_method: 'cash' | 'credit_card' | 'transfer' | 'insurance';
+    status: 'pending' | 'completed' | 'cancelled';
     created_at: string;
+    created_by: string;
+    patient?: {
+        first_name: string;
+        last_name: string;
+    };
+}
+
+export interface CreateTransactionInput {
+    type: 'income' | 'expense';
+    amount: number;
+    description: string;
+    patient_id?: string;
+    product_service?: string;
+    payment_method: string;
+    status?: string;
+}
+
+export interface FinanceSummary {
+    total_income: number;
+    total_expenses: number;
+    balance: number;
 }
 
 export interface FinanceStats {
@@ -16,5 +37,3 @@ export interface FinanceStats {
     netIncome: number;
     pendingIncome: number;
 }
-
-export type CreateTransactionInput = Omit<Transaction, 'id' | 'created_at'>;

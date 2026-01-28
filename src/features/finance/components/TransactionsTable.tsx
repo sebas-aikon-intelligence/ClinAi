@@ -24,7 +24,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
                         <tr>
                             <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Fecha</th>
                             <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Descripción</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Categoría</th>
+                            <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Tipo</th>
                             <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Estado</th>
                             <th className="px-6 py-4 font-semibold text-slate-600 text-sm text-right">Monto</th>
                             <th className="px-6 py-4 font-semibold text-slate-600 text-sm w-10"></th>
@@ -34,32 +34,35 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
                         {transactions.map(t => (
                             <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">
-                                    {new Date(t.date).toLocaleDateString()}
+                                    {new Date(t.created_at).toLocaleDateString()}
                                 </td>
                                 <td className="px-6 py-4">
-                                    <div className="font-medium text-slate-800">{t.description || t.category}</div>
+                                    <div className="font-medium text-slate-800">{t.description}</div>
                                     <div className="text-xs text-slate-400">{t.patient_id ? 'Asociado a paciente' : 'General'}</div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                        {t.category}
+                                    <span className={cn(
+                                        "px-2.5 py-1 rounded-full text-xs font-medium capitalize",
+                                        t.type === 'income' ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+                                    )}>
+                                        {t.type === 'income' ? 'Ingreso' : 'Gasto'}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={cn(
                                         "px-2.5 py-1 rounded-full text-xs font-medium capitalize",
-                                        t.status === 'paid' ? "bg-green-50 text-green-700" :
+                                        t.status === 'completed' ? "bg-green-50 text-green-700" :
                                             t.status === 'pending' ? "bg-yellow-50 text-yellow-700" :
                                                 "bg-red-50 text-red-700"
                                     )}>
-                                        {t.status === 'paid' ? 'Pagado' : t.status === 'pending' ? 'Pendiente' : 'Cancelado'}
+                                        {t.status === 'completed' ? 'Completado' : t.status === 'pending' ? 'Pendiente' : 'Cancelado'}
                                     </span>
                                 </td>
                                 <td className={cn(
                                     "px-6 py-4 text-sm font-bold text-right whitespace-nowrap",
                                     t.type === 'income' ? "text-green-600" : "text-slate-800"
                                 )}>
-                                    {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+                                    {t.type === 'income' ? '+' : '-'}${Number(t.amount).toLocaleString()}
                                 </td>
                                 <td className="px-6 py-4">
                                     <button

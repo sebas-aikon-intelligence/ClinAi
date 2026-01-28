@@ -6,6 +6,7 @@ import { createTag, updateTag, deleteTag } from '../actions/tagActions';
 import { TagBadge } from './TagBadge';
 import { Loader2, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { CreateTagInput } from '../types';
+import { cn } from '@/lib/utils';
 
 const COLORS = [
     '#EF4444', // Red

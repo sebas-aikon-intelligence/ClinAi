@@ -107,3 +107,188 @@
   filter: blur(80px);
   opacity: 0.6;
 }
+
+/* ============================================
+   FULLCALENDAR VISIBILITY OVERRIDES
+   ============================================ */
+
+/* Main Calendar Container */
+.fc {
+  --fc-border-color: #94a3b8 !important;
+  --fc-today-bg-color: #dbeafe !important;
+  --fc-page-bg-color: #ffffff !important;
+  --fc-neutral-bg-color: #f8fafc !important;
+  font-family: inherit !important;
+  background: white !important;
+}
+
+/* Grid Structure - Force Visible Borders */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 1px solid #94a3b8 !important;
+}
+
+.fc-scrollgrid {
+  border: 2px solid #64748b !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: white !important;
+}
+
+.fc-scrollgrid-section>* {
+  border: none !important;
+}
+
+/* Header Row */
+.fc-col-header-cell {
+  background-color: #e2e8f0 !important;
+  border-bottom: 2px solid #64748b !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  padding: 12px 0 !important;
+}
+
+.fc-col-header-cell-cushion {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 12px !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Day Cells */
+.fc-daygrid-day {
+  background-color: #ffffff !important;
+  min-height: 100px !important;
+}
+
+.fc-daygrid-day.fc-day-today {
+  background-color: #dbeafe !important;
+}
+
+.fc-daygrid-day.fc-day-other {
+  background-color: #f8fafc !important;
+}
+
+.fc-daygrid-day-frame {
+  min-height: 90px !important;
+  padding: 4px !important;
+}
+
+.fc-daygrid-day-top {
+  display: flex !important;
+  justify-content: center !important;
+  padding: 6px !important;
+}
+
+/* Day Numbers - MUST BE VISIBLE */
+.fc-daygrid-day-number {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  padding: 4px 8px !important;
+  text-decoration: none !important;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border-radius: 50% !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.fc-day-other .fc-daygrid-day-number {
+  color: #94a3b8 !important;
+}
+
+/* Events - FORCE VISIBILITY */
+.fc-event {
+  visibility: visible !important;
+  opacity: 1 !important;
+  border: none !important;
+  padding: 4px 6px !important;
+  margin: 2px !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+}
+
+.fc-daygrid-event {
+  margin: 2px 4px !important;
+}
+
+.fc-daygrid-event-harness {
+  visibility: visible !important;
+  margin: 2px 0 !important;
+}
+
+.fc-event-main {
+  padding: 2px 4px !important;
+}
+
+.fc-event-title {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.fc-event-time {
+  color: white !important;
+  font-weight: 500 !important;
+}
+
+/* "More" Link */
+.fc-daygrid-more-link {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+}
+
+/* Time Grid (Week/Day View) */
+.fc-timegrid-slot {
+  height: 48px !important;
+  background: white !important;
+}
+
+.fc-timegrid-slot-lane {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.fc-timegrid-axis-cushion {
+  color: #475569 !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+}
+
+.fc-timegrid-col {
+  background: white !important;
+}
+
+.fc-timegrid-now-indicator-line {
+  border-color: #ef4444 !important;
+}
+
+/* Popover for More Events */
+.fc-popover {
+  z-index: 100 !important;
+  background: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.fc-popover-header {
+  background: #f8fafc !important;
+  padding: 8px 12px !important;
+  font-weight: 600 !important;
+}
+
+/* Hide FullCalendar default toolbar (we use custom header) */
+.fc-header-toolbar {
+  display: none !important;
+}

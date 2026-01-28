@@ -19,6 +19,21 @@ export async function getTags(): Promise<Tag[]> {
     return data || [];
 }
 
+export async function getPatientTags(patientId: string): Promise<string[]> {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('patient_tags')
+        .select('tag_id')
+        .eq('patient_id', patientId);
+
+    if (error) {
+        console.error('Error fetching patient tags:', error);
+        return [];
+    }
+
+    return data ? data.map(item => item.tag_id) : [];
+}
+
 export async function createTag(input: CreateTagInput): Promise<Tag | null> {
     const supabase = await createClient();
     const { data, error } = await supabase

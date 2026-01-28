@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { getPatientById, getPatientFiles, getPrescriptions, getActivities } from '@/features/patients/actions/patientActions';
+import { getPatientTags } from '@/features/tags/actions/tagActions';
 import { PatientDetail } from '@/features/patients/components/PatientDetail';
 import { notFound } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -11,10 +12,11 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
     if (!patient) notFound();
 
     // Parallel data fetching
-    const [files, prescriptions, activities] = await Promise.all([
+    const [files, prescriptions, activities, assignedTags] = await Promise.all([
         getPatientFiles(id),
         getPrescriptions(id),
-        getActivities(id)
+        getActivities(id),
+        getPatientTags(id)
     ]);
 
     return (
@@ -25,7 +27,7 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
                     files={files}
                     prescriptions={prescriptions}
                     activities={activities}
-                    assignedTags={[]} // TODO: Fetch real tags
+                    assignedTags={assignedTags}
                 />
             </Suspense>
         </div>
