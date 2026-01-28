@@ -1,232 +1,361 @@
-# 🏭 SaaS Factory V3 - La Fábrica de Software Inteligente
+# 🚀 Next.js + Claude Code - Frontend Setup
 
-> *"La Tesla Factory aplicada al software."*
+Setup completo de Next.js 16 + Supabase + Claude Code listo para producción. Arquitectura Feature-First optimizada para desarrollo asistido por IA.
 
-Sistema de comandos inteligentes que crea aplicaciones **production-ready** con IA.
+## 🎯 ¿Qué es esto?
 
----
+Un template **production-ready** para aplicaciones frontend modernas con:
 
-## 🤖 La Analogía: Tesla Factory
+- ✅ Next.js 16 (App Router) + TypeScript
+- ✅ Supabase (Database + Auth)
+- ✅ Tailwind CSS + shadcn/ui
+- ✅ Claude Code con comandos, agentes y skills
+- ✅ Arquitectura Feature-First optimizada para IA
+- ✅ Auto port detection (3000-3006)
+- ✅ Testing, linting y type checking configurados
 
-Piensa en este repositorio como una **fábrica automatizada de software**:
+## 📦 Tech Stack
 
-| Componente Tesla | Tu Sistema | Qué Hace |
-|------------------|------------|----------|
-| **Factory OS** | `CLAUDE.md` | Cerebro del agente (identidad y reglas) |
-| **Blueprints** | `.claude/PRPs/*.md` | Especificaciones de features |
-| **Control Room** | Humano | Aprueba PRPs y valida diseño |
-| **Robot Arms** | Supabase MCP + Terminal | Edita código y base de datos |
-| **Eyes/Cameras** | Playwright MCP | Valida UI visualmente |
-| **Quality Control** | Next.js MCP + typecheck | Detecta errores en tiempo real |
-| **Assembly Line** | `bucle-agentico-blueprint.md` | Proceso por fases |
-| **Neural Network** | Auto-Blindaje | Aprende de errores (nunca se repiten) |
-
-**Cuando ejecutas `saas-factory`**, copias toda la **infraestructura de la fábrica** al directorio actual.
-
----
-
-## 🧠 V3: El Sistema que Mejora Solo
-
-> *"Como el acero del Cybertruck: cada error es un impacto que refuerza nuestra estructura. Blindamos el proceso para que la falla nunca se repita."*
-
-```
-Error ocurre → Se arregla → Se DOCUMENTA → NUNCA ocurre de nuevo
+```yaml
+Runtime: Node.js + TypeScript
+Framework: Next.js 16 (App Router)
+Database: PostgreSQL/Supabase
+Styling: Tailwind CSS
+State: Zustand
+Testing: Jest + React Testing Library
+Validation: Zod
+AI Tooling: Claude Code + MCPs
 ```
 
-Cada error encontrado se documenta en el archivo relevante:
-- **PRP actual** → Errores específicos de esta feature
-- **`.claude/prompts/*.md`** → Errores que aplican a múltiples features
-- **`CLAUDE.md`** → Errores críticos que aplican a TODO
+## 🏗️ Arquitectura Feature-First
 
-**El mismo error NUNCA ocurre dos veces.**
+```
+src/
+├── app/                      # Next.js App Router
+│   ├── (auth)/              # Rutas auth (grupo)
+│   ├── (main)/              # Rutas principales
+│   ├── layout.tsx
+│   └── page.tsx
+│
+├── features/                 # 🎯 Organizadas por funcionalidad
+│   ├── auth/
+│   │   ├── components/      # LoginForm, SignupForm
+│   │   ├── hooks/           # useAuth, useSession
+│   │   ├── services/        # authService.ts
+│   │   ├── types/           # User, Session
+│   │   └── store/           # authStore.ts
+│   │
+│   ├── dashboard/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── types/
+│   │
+│   └── [tu-feature]/
+│
+└── shared/                   # Código reutilizable
+    ├── components/          # Button, Card, Input
+    ├── hooks/               # useDebounce, useLocalStorage
+    ├── stores/              # appStore.ts
+    ├── types/               # api.ts, domain.ts
+    ├── utils/               # helpers
+    ├── lib/                 # supabase.ts, axios.ts
+    └── constants/
+```
 
----
+> **¿Por qué Feature-First?** Cada feature tiene TODO lo necesario en un solo lugar. Perfecto para que la IA entienda contexto completo sin navegar múltiples carpetas.
 
-## 🚀 Instalación (2 minutos)
+## 🚀 Quick Start
 
-### 1. Clona el repositorio
+### 1. Instalar Dependencias
+
 ```bash
-git clone https://github.com/daniel-carreon/saas-factory-setup.git
-cd saas-factory-setup
+npm install
+# o
+pnpm install
 ```
 
-### 2. Abre en Claude Code
+### 2. Configurar Variables de Entorno
+
 ```bash
-claude .
+# Crear .env.local
+cp .env.example .env.local
+
+# Editar con tus credenciales de Supabase
+NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 ```
 
-### 3. Pídele que configure el alias
-```
-Configura el alias "saas-factory" en mi terminal
-```
+### 3. Configurar MCPs (Opcional)
 
-Claude Code detecta tu sistema (zsh/bash) y configura todo automáticamente.
+Edita `.mcp.json` con tu project ref de Supabase:
 
----
-
-## 📦 ¿Qué Obtienes?
-
-Cuando ejecutas `saas-factory`, obtienes un **proyecto Next.js 16 completo** listo para producción:
-
-```
-tu-proyecto/
-├── CLAUDE.md              # Factory OS - Cerebro del agente
-├── GEMINI.md              # Espejo para Gemini
-├── .mcp.json              # MCPs configurados (Next.js, Playwright, Supabase)
-├── src/                   # App con Feature-First Architecture
-├── .claude/
-│   ├── commands/          # /new-app, /landing, etc.
-│   ├── PRPs/              # Blueprints de features
-│   └── prompts/           # Assembly Line (bucle agéntico)
-└── package.json           # Next.js 16, React 19, Tailwind 3.4
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "args": ["--project-ref=TU_PROJECT_REF"],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "TU_TOKEN"
+      }
+    }
+  }
+}
 ```
 
-**No es un template vacío. Es production-ready desde el minuto 0.**
+### 4. Iniciar Desarrollo
 
----
-
-## 🏗️ El Golden Path
-
-**Un solo stack. Sin decisiones innecesarias.**
-
-| Capa | Tecnología |
-|------|------------|
-| Frontend | Next.js 16 + React 19 + TypeScript |
-| Estilos | Tailwind CSS 3.4 + shadcn/ui |
-| Backend | Supabase (Auth + Database) |
-| Testing | Playwright MCP |
-| Deploy | Vercel |
-
----
-
-## 🔥 El Cyborg - 3 MCPs Trabajando Juntos
-
-```typescript
-// next.config.ts - Esta línea lo cambia todo
-experimental: { mcpServer: true }
+```bash
+npm run dev
+# Auto-detecta puerto disponible (3000-3006)
 ```
-
-| MCP | Rol (Analogía) | Superpoder |
-|-----|----------------|------------|
-| 🧠 **Next.js DevTools** | Quality Control | Lee errores/logs en tiempo real vía `/_next/mcp` |
-| 👁️ **Playwright** | Eyes/Cameras | Captura screenshots, valida UX visualmente |
-| 🖐️ **Supabase** | Robot Arms | Ejecuta SQL, migraciones, consulta logs |
-
-**Sin MCPs:** La IA adivina qué está roto.
-**Con MCPs:** La IA **ve** exactamente qué está roto y por qué.
-
----
 
 ## 🛠️ Comandos Disponibles
 
-### `/new-app` - El Arquitecto
-Actúa como **Consultor de Negocio Senior**. Te entrevista y genera `BUSINESS_LOGIC.md` con la especificación técnica completa.
-
-### `/landing` - The Money Maker
-Actúa como **Copywriter + Diseñador**. Crea landing pages de alta conversión validadas visualmente con Playwright.
-
----
-
-## 📋 Workflow: De 0 a Producción
-
-### 1. Crear proyecto
+### Development
 ```bash
-mkdir mi-saas && cd mi-saas
-saas-factory
+npm run dev          # Servidor desarrollo (auto-port 3000-3006)
+npm run build        # Build para producción
+npm run start        # Servidor producción
 ```
 
-### 2. Instalar y configurar
+### Quality Assurance
 ```bash
-npm install
-cp .env.example .env.local  # Añade credenciales de Supabase
+npm run test         # Tests con Jest
+npm run test:watch   # Tests en modo watch
+npm run lint         # ESLint
+npm run lint:fix     # Fix automático
+npm run typecheck    # TypeScript check
 ```
 
-### 3. Prender el MCP
+### Skills Management
 ```bash
-npm run dev
-# Output: - MCP Server: http://localhost:3000/_next/mcp ✓
+# Crear nuevo skill
+python .claude/skills/skill-creator/scripts/init_skill.py my-skill
+
+# Validar skill
+python .claude/skills/skill-creator/scripts/quick_validate.py ./my-skill
+
+# Empaquetar skill
+python .claude/skills/skill-creator/scripts/package_skill.py ./my-skill
 ```
 
-### 4. Conectar Claude Code
+## 🤖 Claude Code Integration
+
+### Comandos Disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `/explorador` | Explora codebase y arquitectura |
+| `/ejecutar-prp` | Ejecuta PRPs (features complejas) |
+| `/generar-prp` | Genera nuevo PRP |
+| `/preparar-paralelo` | Prepara tareas paralelas |
+| `/ejecutar-paralelo` | Ejecuta en paralelo |
+
+### Agentes Especializados
+
+1. **Codebase Analyst** - Analiza arquitectura y patrones
+2. **Gestor Documentación** - Mantiene docs actualizados
+
+### MCPs Configurados (El Cyborg)
+
+- 🧠 **Next.js DevTools** - Conectado a `/_next/mcp` para debug en tiempo real
+- 👁️ **Playwright** - Validación visual y testing automatizado
+- 🗄️ **Supabase** - Integración directa con DB y auth
+
+## 🎨 Bucle Agéntico con Playwright
+
+Este setup incluye integración con Playwright MCP para desarrollo visual:
+
+```
+1. Implementar componente
+2. Capturar screenshot automático
+3. Comparar vs requirements
+4. Iterar hasta pixel-perfect
+```
+
+Lee `.claude/prompts/bucle-agentico.md` para más detalles.
+
+## 📝 Crear tu Primera Feature
+
+### Opción 1: Manual
+
 ```bash
-claude .  # En otra terminal
+mkdir -p src/features/mi-feature/{components,hooks,services,types,store}
 ```
 
-### 5. Definir el negocio
+### Opción 2: Con PRP
+
+```bash
+# En Claude Code, ejecuta:
+/generar-prp
+
+# Describe tu feature, el agente generará:
+# - Estructura completa
+# - Componentes base
+# - Hooks necesarios
+# - Types + validaciones
+# - Tests
 ```
-/new-app
+
+## 🔒 Supabase Setup
+
+### 1. Crear Proyecto en Supabase
+
+```bash
+# Visita: https://supabase.com/dashboard
+# Crea nuevo proyecto
+# Copia URL y Anon Key
 ```
 
-Responde las preguntas. El agente genera `BUSINESS_LOGIC.md`.
+### 2. Configurar Cliente
 
-### 6. Construir
-```
-Implementa las features según BUSINESS_LOGIC.md
-```
+El cliente ya está configurado en `src/shared/lib/supabase.ts`:
 
-La IA usa el MCP para ver errores en tiempo real mientras construye.
-
----
-
-## 🧪 ¿Cómo Saber que el MCP Funciona?
-
-**Prueba:** Rompe algo a propósito
 ```typescript
-// src/app/page.tsx
-const broken = undefined.foo  // 💥
+import { createClient } from '@supabase/supabase-js'
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 ```
 
-**Con MCP activo**, Claude ve:
+### 3. Crear Migraciones
+
+```bash
+# Guardar migraciones en supabase/migrations/
+# Ejemplo: supabase/migrations/001_create_users.sql
 ```
-TypeError: Cannot read property 'foo' of undefined
-  at Home (page.tsx:2:23)
+
+## 🧪 Testing Strategy
+
+### Unit Tests
+
+```typescript
+// src/features/auth/hooks/useAuth.test.ts
+import { renderHook } from '@testing-library/react'
+import { useAuth } from './useAuth'
+
+test('should authenticate user', async () => {
+  const { result } = renderHook(() => useAuth())
+  await result.current.login('test@example.com', 'password')
+  expect(result.current.user).toBeDefined()
+})
 ```
 
-**Sin MCP**, Claude adivina.
+### Run Tests
 
----
+```bash
+npm run test                    # Run all tests
+npm run test:watch              # Watch mode
+npm run test:coverage           # Coverage report
+```
 
-## ❓ FAQ
+## 🎯 Best Practices
 
-**¿Por qué solo Next.js?**
-Hace el 100% del trabajo para el 95% de los SaaS B2B. No necesitas Python ni backends separados.
+### Component Structure
 
-**¿Por qué Email/Password en lugar de OAuth?**
-Evita bloqueos de bots durante testing. OAuth requiere verificación que complica el desarrollo.
+```typescript
+// ✅ GOOD: Clear props, typed, documented
+interface ButtonProps {
+  children: React.ReactNode
+  variant?: 'primary' | 'secondary'
+  onClick: () => void
+}
 
-**¿Puedo personalizar?**
-Sí. Todo está diseñado para ser extendido. `CLAUDE.md` es tu punto de entrada.
+export function Button({ children, variant = 'primary', onClick }: ButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`btn btn-${variant}`}
+    >
+      {children}
+    </button>
+  )
+}
+```
 
----
+### Feature Organization
+
+```typescript
+// ✅ GOOD: Todo relacionado en un lugar
+src/features/auth/
+├── components/     # UI específicos de auth
+├── hooks/          # Lógica de auth
+├── services/       # API calls
+├── types/          # Types de auth
+└── store/          # Estado de auth
+```
+
+## 📚 Documentación
+
+- **CLAUDE.md** - System prompt completo (la fuente de verdad)
+- **.claude/prompts/** - Metodologías y patrones
+- **.claude/PRPs/prp-base.md** - Sistema de Blueprints
+- **.claude/skills/** - Skills reutilizables
+
+## 🚨 Troubleshooting
+
+### Puerto Ocupado (EADDRINUSE)
+
+```bash
+# El auto-port detection debería resolver esto
+# Si persiste:
+lsof -i :3000
+kill -9 <PID>
+
+# O usa el script directamente:
+node scripts/dev-server.js
+```
+
+### TypeScript Errors
+
+```bash
+npm run typecheck          # Verificar errores
+rm -rf .next               # Limpiar cache
+npm install                # Reinstalar deps
+```
+
+### Tests Failing
+
+```bash
+npm run test -- --clearCache    # Limpiar cache de Jest
+npm run test -- --verbose       # Ver detalles
+```
+
+## 🎯 Próximos Pasos
+
+1. **Lee CLAUDE.md** - Principios y convenciones completas
+2. **Configura Supabase** - Auth + Database
+3. **Crea tu primera feature** - Usa `/generar-prp`
+4. **Implementa autenticación** - Feature auth incluida
+5. **Deploy** - Vercel/Netlify ready
 
 ## 🤝 Contribuir
 
-1. Abre un issue con tu propuesta
-2. Fork y PR son bienvenidos
-3. Mantén la filosofía: **simplicidad radical**
+Este template está diseñado para ser extendido. Algunas ideas:
+
+- [ ] Añadir más features base (notifications, settings)
+- [ ] Crear más skills específicos
+- [ ] Mejorar PRPs templates
+- [ ] Añadir más tests de ejemplo
+
+## 📦 Deploy
+
+### Vercel (Recomendado)
+
+```bash
+npm install -g vercel
+vercel
+```
+
+### Configurar Variables de Entorno
+
+En tu dashboard de Vercel, añade:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ---
 
-## 📖 Documentación
-
-Para detalles técnicos, ver:
-- `saas-factory/CLAUDE.md` - Factory OS (cerebro del agente)
-- `.claude/PRPs/prp-base.md` - Sistema de Blueprints
-- `.claude/prompts/bucle-agentico-blueprint.md` - Assembly Line
-- `.claude/commands/` - Cómo funcionan los comandos
-
----
-
-**SaaS Factory V3** | *"De la idea a producción en minutos, no en meses."*
-
-```
-        ┌─────────────────────────────────────────────────────────┐
-        │                                                         │
-        │   🏭 SAAS FACTORY V3                                    │
-        │                                                         │
-        │   saas-factory  →  /new-app  →  build  →  🚀           │
-        │                                                         │
-        │   El sistema que se blinda solo (Auto-Blindaje)           │
-        │                                                         │
-        └─────────────────────────────────────────────────────────┘
-```
+**Next.js + Claude Code Setup v1.0** | Built with AI-first development in mind 🤖

@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@layer base {
+  body {
+    @apply text-slate-900 overflow-x-hidden;
+    /* Warm neutral base like the reference image */
+    background: linear-gradient(135deg, #ffffff 0%, #7bbffb 50%, #0771fc 100%);
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply backdrop-blur-xl bg-white/60 border border-white/40 shadow-sm;
+  }
+
+  .glass-card {
+    @apply glass-panel rounded-2xl transition-all duration-300 hover:bg-white/70 hover:border-white/50 hover:shadow-lg hover:-translate-y-1;
+  }
+
+  /* Apple-style Liquid Glass from reference image */
+  .liquid-card {
+    position: relative;
+    @apply backdrop-blur-2xl rounded-3xl transition-all duration-500 overflow-hidden;
+    /* Frosted glass effect - high transparency with blur */
+    background: linear-gradient(145deg,
+        rgba(245, 235, 235, 0.65) 0%,
+        rgba(255, 255, 255, 0.35) 100%);
+    /* Multi-layer border for depth */
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    /* Complex shadow: outer drop + inner specular */
+    box-shadow:
+      0 20px 50px -12px rgba(0, 0, 0, 0.15),
+      0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+      0 2px 4px 0 rgba(255, 255, 255, 0.8) inset;
+  }
+
+  .liquid-card::before {
+    /* Top specular highlight line */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    pointer-events: none;
+  }
+
+  .liquid-card:hover {
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.6) inset,
+      0 2px 6px 0 rgba(255, 255, 255, 0.9) inset;
+  }
+
+  /* Ambient Mesh Background - warm tones like reference */
+  .mesh-container {
+    @apply fixed inset-0 -z-10 overflow-hidden;
+    background: linear-gradient(135deg, #ffffff 0%, #ffffffe8 50%, #7fdce5f1 100%);
+  }
+
+  .mesh-orb {
+    /* Warmer, subtler orbs */
+    @apply absolute rounded-full mix-blend-multiply filter blur-[120px] opacity-30 animate-mesh-flow;
+  }
+
+  .mesh-orb-1 {
+    @apply bg-amber-200 w-[50rem] h-[50rem] -top-20 -left-20 animate-mesh-flow;
+    animation-delay: 0s;
+  }
+
+  .mesh-orb-2 {
+    @apply bg-stone-300 w-[40rem] h-[40rem] top-40 right-10 animate-mesh-flow;
+    animation-delay: -5s;
+  }
+
+  .mesh-orb-3 {
+    @apply bg-orange-100 w-[55rem] h-[55rem] -bottom-40 left-20 animate-mesh-flow;
+    animation-delay: -10s;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-luxury-700 to-mint-600 font-bold;
+  }
+}
+
+.blob-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  filter: blur(80px);
+  opacity: 0.6;
+}
