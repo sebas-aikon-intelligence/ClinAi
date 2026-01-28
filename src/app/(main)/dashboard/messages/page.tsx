@@ -196,7 +196,7 @@ export default function MessagesPage() {
       </GlassCard>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col rounded-3xl bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl overflow-hidden">
+      <div className="flex-1 flex flex-col rounded-3xl bg-white/40 border border-white/30 shadow-xl overflow-hidden">
         {selectedConversation ? (
           <>
             {/* Header */}
@@ -244,7 +244,10 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4" style={{ minHeight: 0 }}>
+            <div
+              className="flex-1 overflow-y-auto p-6 space-y-4 bg-white/5"
+              style={{ minHeight: 0, willChange: 'scroll-position', WebkitOverflowScrolling: 'touch' }}
+            >
               {loadingMessages ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="w-6 h-6 animate-spin text-luxury-500" />
