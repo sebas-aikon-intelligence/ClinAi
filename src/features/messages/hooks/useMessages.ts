@@ -1,22 +1,66 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Message, MessageTemplate } from '../types';
-import { getMessages, sendMessage, getTemplates } from '../actions/messageActions';
+import { Message, MessageTemplate, ChannelType } from '../types';
+import { getTemplates } from '../actions/messageActions';
 import { createClient } from '@/utils/supabase/client';
 
-export function useMessages(patientId?: string) {
+// Parse n8n message format to app Message format
+interface N8nDbMessage {
+    id: number;
+    session_id: string;
+    message: {
+        type: 'ai' | 'human';
+        content: string;
+    };
+    created_at: string;
+    read_at?: string | null;
+    channel?: string;
+}
+
+function parseN8nMessage(dbMsg: N8nDbMessage): Message {
+    return {
+        id: dbMsg.id.toString(),
+        patient_id: dbMsg.session_id,
+        content: dbMsg.message?.content || '',
+        direction: dbMsg.message?.type === 'human' ? 'inbound' : 'outbound',
+        channel: (dbMsg.channel as ChannelType) || 'whatsapp',
+        status: 'delivered',
+        created_at: dbMsg.created_at,
+        read_at: dbMsg.read_at
+    };
+}
+
+export function useMessages(sessionId?: string) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [templates, setTemplates] = useState<MessageTemplate[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const fetchMessages = useCallback(async () => {
-        if (!patientId) return;
+        if (!sessionId) return;
         setIsLoading(true);
-        const data = await getMessages(patientId);
-        setMessages(data);
+
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('mensajes_n8n')
+            .select('id, session_id, message, created_at, read_at, channel')
+            .eq('session_id', sessionId)
+            .order('id', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching messages:', error);
+            setIsLoading(false);
+            return;
+        }
+
+        // Parse n8n format to app format
+        const parsedMessages = (data || [])
+            .filter((msg: N8nDbMessage) => msg.message?.content)
+            .map(parseN8nMessage);
+
+        setMessages(parsedMessages);
         setIsLoading(false);
-    }, [patientId]);
+    }, [sessionId]);
 
     const fetchTemplates = useCallback(async () => {
         const data = await getTemplates();
@@ -25,35 +69,40 @@ export function useMessages(patientId?: string) {
 
     // Realtime subscription
     useEffect(() => {
-        if (!patientId) return;
+        if (!sessionId) return;
         fetchMessages();
         fetchTemplates();
 
         const supabase = createClient();
         const channel = supabase
-            .channel(`messages:${patientId}`)
+            .channel(`messages:${sessionId}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'mensajes_n8n',
-                filter: `patient_id=eq.${patientId}`
+                filter: `session_id=eq.${sessionId}`
             }, (payload) => {
-                setMessages(prev => [...prev, payload.new as Message]);
+                const newMsg = payload.new as N8nDbMessage;
+                if (newMsg.message?.content) {
+                    setMessages(prev => [...prev, parseN8nMessage(newMsg)]);
+                }
             })
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [patientId, fetchMessages, fetchTemplates]);
+    }, [sessionId, fetchMessages, fetchTemplates]);
 
-    const send = async (content: string, channel: 'whatsapp' | 'telegram' | 'instagram' | 'email' | 'sms') => {
-        if (!patientId) return;
-        // Optimistic update
+    const send = async (content: string, channel: ChannelType) => {
+        if (!sessionId) return;
+
+        // For now, just add optimistic message
+        // The actual sending would need to go through n8n webhook
         const tempId = crypto.randomUUID();
         const newMessage: Message = {
             id: tempId,
-            patient_id: patientId,
+            patient_id: sessionId,
             content,
             direction: 'outbound',
             channel,
@@ -63,24 +112,19 @@ export function useMessages(patientId?: string) {
 
         setMessages(prev => [...prev, newMessage]);
 
-        try {
-            await sendMessage({
-                patient_id: patientId,
-                content,
-                direction: 'outbound',
-                channel
+        // TODO: Send to n8n webhook or directly to WhatsApp API
+        // For now, we'll insert directly to DB for demo
+        const supabase = createClient();
+        await supabase
+            .from('mensajes_n8n')
+            .insert({
+                session_id: sessionId,
+                message: {
+                    type: 'ai',
+                    content: content
+                },
+                channel: channel
             });
-            // Realtime will handle the actual insert confirmation, or we replace the temp one if we handled ID properly.
-            // For simplicity, we just let the realtime subscription add the "real" one and we might have duplicates momentarily if we don't handle ID.
-            // BUT, since we use optimistic updates, we should replace or ignore the incoming if checking IDs.
-            // Simplest MVP: Just await and let the fetch/realtime handle it. 
-            // But for "Chat" feel, optimistic is key.
-            // Re-fetching entire list is safe.
-            // fetchMessages();
-        } catch (e) {
-            console.error(e);
-            setMessages(prev => prev.filter(m => m.id !== tempId)); // Revert on error
-        }
     };
 
     return { messages, templates, isLoading, send };

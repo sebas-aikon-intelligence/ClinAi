@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Conversation, MessagesFilter } from '../types';
+import { Conversation, MessagesFilter, ChannelType } from '../types';
 import { createClient } from '@/utils/supabase/client';
 
 interface ConversationsResult {
@@ -9,8 +9,21 @@ interface ConversationsResult {
   isLoading: boolean;
   filter: MessagesFilter;
   setFilter: (filter: MessagesFilter) => void;
-  markAsRead: (patientId: string) => Promise<void>;
-  toggleAI: (patientId: string, enabled: boolean) => void;
+  markAsRead: (sessionId: string) => Promise<void>;
+  toggleAI: (sessionId: string, enabled: boolean) => void;
+}
+
+// Parse n8n message format
+interface N8nMessage {
+  id: number;
+  session_id: string;
+  message: {
+    type: 'ai' | 'human';
+    content: string;
+  };
+  created_at: string;
+  read_at?: string | null;
+  channel?: string;
 }
 
 export function useConversations(): ConversationsResult {
@@ -26,24 +39,10 @@ export function useConversations(): ConversationsResult {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Get latest message per patient with unread count
+    // Get all messages from mensajes_n8n (using session_id as conversation key)
     const { data, error } = await supabase
       .from('mensajes_n8n')
-      .select(`
-                patient_id,
-                content,
-                direction,
-                channel,
-                created_at,
-                read_at,
-                patients!inner (
-                    id,
-                    full_name,
-                    first_name,
-                    last_name,
-                    avatar_url
-                )
-            `)
+      .select('id, session_id, message, created_at, read_at, channel')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -52,30 +51,31 @@ export function useConversations(): ConversationsResult {
       return;
     }
 
-    // Group by patient and get latest message + unread count
+    // Group by session_id and get latest message + unread count
     const conversationMap = new Map<string, Conversation>();
 
-    (data || []).forEach((msg: any) => {
-      const patientId = msg.patient_id;
-      if (!patientId) return;
+    (data || []).forEach((msg: N8nMessage) => {
+      const sessionId = msg.session_id;
+      if (!sessionId || !msg.message) return;
 
-      const existing = conversationMap.get(patientId);
-      const isUnread = msg.direction === 'inbound' && !msg.read_at;
+      const existing = conversationMap.get(sessionId);
+      const messageContent = msg.message.content || '';
+      const messageType = msg.message.type;
+      const isInbound = messageType === 'human';
+      const isUnread = isInbound && !msg.read_at;
 
       if (!existing) {
-        const patient = msg.patients;
-        const patientName = patient?.full_name ||
-          `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim() ||
-          'Sin nombre';
+        // Create conversation name from session or first message
+        const shortSessionId = sessionId.substring(0, 8);
 
-        conversationMap.set(patientId, {
-          patient_id: patientId,
-          patient_name: patientName,
-          patient_avatar: patient?.avatar_url,
-          last_message: msg.content || '',
+        conversationMap.set(sessionId, {
+          patient_id: sessionId, // Using session_id as the conversation ID
+          patient_name: `Chat ${shortSessionId}...`, // Display name
+          patient_avatar: undefined,
+          last_message: messageContent.substring(0, 100),
           last_message_at: msg.created_at,
-          last_message_direction: msg.direction,
-          channel: msg.channel || 'whatsapp',
+          last_message_direction: isInbound ? 'inbound' : 'outbound',
+          channel: (msg.channel as ChannelType) || 'whatsapp',
           unread_count: isUnread ? 1 : 0,
           ai_enabled: true
         });
@@ -97,7 +97,10 @@ export function useConversations(): ConversationsResult {
     }
     if (filter.search) {
       const search = filter.search.toLowerCase();
-      result = result.filter(c => c.patient_name.toLowerCase().includes(search));
+      result = result.filter(c =>
+        c.patient_name.toLowerCase().includes(search) ||
+        c.last_message.toLowerCase().includes(search)
+      );
     }
 
     // Sort by last message (most recent first)
@@ -108,20 +111,20 @@ export function useConversations(): ConversationsResult {
   }, [filter]);
 
   // Mark messages as read
-  const markAsRead = async (patientId: string) => {
+  const markAsRead = async (sessionId: string) => {
     const supabase = createClient();
 
+    // Mark all human messages in this session as read
     await supabase
       .from('mensajes_n8n')
       .update({ read_at: new Date().toISOString() })
-      .eq('patient_id', patientId)
-      .is('read_at', null)
-      .eq('direction', 'inbound');
+      .eq('session_id', sessionId)
+      .is('read_at', null);
 
     // Update local state
     setConversations(prev =>
       prev.map(c =>
-        c.patient_id === patientId
+        c.patient_id === sessionId
           ? { ...c, unread_count: 0 }
           : c
       )
@@ -129,10 +132,10 @@ export function useConversations(): ConversationsResult {
   };
 
   // Toggle AI for a conversation
-  const toggleAI = (patientId: string, enabled: boolean) => {
+  const toggleAI = (sessionId: string, enabled: boolean) => {
     setConversations(prev =>
       prev.map(c =>
-        c.patient_id === patientId
+        c.patient_id === sessionId
           ? { ...c, ai_enabled: enabled }
           : c
       )
