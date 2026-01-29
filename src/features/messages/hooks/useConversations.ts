@@ -39,10 +39,18 @@ export function useConversations(): ConversationsResult {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Get all messages from mensajes_n8n (using session_id as conversation key)
+    // Get all messages with patient info via JOIN
     const { data, error } = await supabase
       .from('mensajes_n8n')
-      .select('id, session_id, message, created_at, read_at, channel')
+      .select(`
+        id, 
+        session_id, 
+        message, 
+        created_at, 
+        read_at, 
+        channel,
+        patients(full_name, email, phone)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -65,12 +73,12 @@ export function useConversations(): ConversationsResult {
       const isUnread = isInbound && !msg.read_at;
 
       if (!existing) {
-        // Create conversation name from session or first message
-        const shortSessionId = sessionId.substring(0, 8);
+        // Use patient name from JOIN, fallback to session_id
+        const patientName = (msg as any).patients?.full_name || `Chat ${sessionId.substring(0, 8)}...`;
 
         conversationMap.set(sessionId, {
           patient_id: sessionId, // Using session_id as the conversation ID
-          patient_name: `Chat ${shortSessionId}...`, // Display name
+          patient_name: patientName,
           patient_avatar: undefined,
           last_message: messageContent.substring(0, 100),
           last_message_at: msg.created_at,
