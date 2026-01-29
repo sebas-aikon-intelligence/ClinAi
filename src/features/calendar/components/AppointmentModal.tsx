@@ -33,14 +33,14 @@ export function AppointmentModal({ isOpen, onClose, appointment }: AppointmentMo
 
     useEffect(() => {
         if (appointment) {
-            setTitle(appointment.title);
+            setTitle(appointment.title ?? '');
             const start = new Date(appointment.start_time);
             const end = new Date(appointment.end_time);
             setDate(start.toISOString().split('T')[0]);
             setStartTime(start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
             setEndTime(end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
-            setType(appointment.type);
-            setNotes(appointment.notes || '');
+            setType(appointment.type ?? 'consultation');
+            setNotes(appointment.notes ?? '');
             setIsEditing(false); // Reset edit mode on new appointment
         }
     }, [appointment]);
@@ -48,6 +48,7 @@ export function AppointmentModal({ isOpen, onClose, appointment }: AppointmentMo
 
 
     const handleStatusChange = async (newStatus: Appointment['status']) => {
+        if (!appointment) return;
         setIsLoading(true);
         try {
             await updateAppointment(appointment.id, { status: newStatus });
@@ -63,6 +64,7 @@ export function AppointmentModal({ isOpen, onClose, appointment }: AppointmentMo
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!appointment) return;
         setIsLoading(true);
         try {
             const startDateTime = new Date(`${date}T${startTime}`);
@@ -72,7 +74,7 @@ export function AppointmentModal({ isOpen, onClose, appointment }: AppointmentMo
                 title,
                 start_time: startDateTime,
                 end_time: endDateTime,
-                type: type as any,
+                type: type as Appointment['type'],
                 notes
             });
             toast.success('Cita actualizada correctamente');
@@ -87,6 +89,7 @@ export function AppointmentModal({ isOpen, onClose, appointment }: AppointmentMo
     };
 
     const handleDelete = async () => {
+        if (!appointment) return;
         if (!confirm('¿Estás seguro de eliminar esta cita?')) return;
 
         setIsLoading(true);

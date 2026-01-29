@@ -31,7 +31,7 @@ export function ClinicCalendar({ initialAppointments }: ClinicCalendarProps) {
     // Transform appointments to FullCalendar events
     const events = appointments.map(app => ({
         id: app.id,
-        title: app.title,
+        title: app.title ?? 'Sin título',
         start: app.start_time,
         end: app.end_time,
         backgroundColor: getEventColor(app.type),
@@ -39,7 +39,7 @@ export function ClinicCalendar({ initialAppointments }: ClinicCalendarProps) {
         extendedProps: { ...app }
     }));
 
-    function getEventColor(type: string) {
+    function getEventColor(type: string | null | undefined): string {
         switch (type) {
             case 'consultation': return '#3B82F6'; // Blue
             case 'follow_up': return '#8B5CF6'; // Purple

@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 export async function getMessages(patientId: string): Promise<Message[]> {
     const supabase = await createClient();
     const { data, error } = await supabase
-        .from('messages')
+        .from('mensajes_n8n')
         .select('*')
         .eq('patient_id', patientId)
         .order('created_at', { ascending: true });
@@ -18,7 +18,7 @@ export async function getMessages(patientId: string): Promise<Message[]> {
 
 export async function sendMessage(input: CreateMessageInput): Promise<Message | null> {
     const supabase = await createClient();
-    const { data, error } = await supabase.from('messages').insert([input]).select().single();
+    const { data, error } = await supabase.from('mensajes_n8n').insert([input]).select().single();
 
     if (error) {
         console.error('Error sending message:', error);
