@@ -1,19 +1,20 @@
 import { Sidebar } from '@/components/layout/Sidebar';
 
-import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+// Auth disabled for demo - uncomment to re-enable
+// import { redirect } from 'next/navigation';
+// import { createClient } from '@/utils/supabase/server';
 
 export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  // Auth disabled for demo - uncomment to re-enable
+  // const supabase = await createClient();
+  // const { data: { user } } = await supabase.auth.getUser();
+  // if (!user) {
+  //   redirect('/login');
+  // }
 
   return (
     <div className="min-h-screen flex">
