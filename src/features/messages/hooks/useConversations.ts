@@ -49,7 +49,7 @@ export function useConversations(): ConversationsResult {
         created_at, 
         read_at, 
         channel,
-        patients(full_name, email, phone)
+        patients!fk_mensajes_patient(full_name, email, phone)
       `)
       .order('created_at', { ascending: false });
 
