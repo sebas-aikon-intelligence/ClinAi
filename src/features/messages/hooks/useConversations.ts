@@ -1,129 +1,176 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import type { TelegramConversation, ChatMessage } from '../types';
+import { useState, useEffect, useCallback } from 'react';
+import { Conversation, MessagesFilter } from '../types';
+import { createClient } from '@/utils/supabase/client';
 
-export function useConversations() {
-  const [conversations, setConversations] = useState<TelegramConversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+interface ConversationsResult {
+  conversations: Conversation[];
+  isLoading: boolean;
+  filter: MessagesFilter;
+  setFilter: (filter: MessagesFilter) => void;
+  markAsRead: (patientId: string) => Promise<void>;
+  toggleAI: (patientId: string, enabled: boolean) => void;
+}
+
+export function useConversations(): ConversationsResult {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<MessagesFilter>({
+    channel: 'all',
+    status: 'all',
+    search: ''
+  });
 
   const fetchConversations = useCallback(async () => {
+    setIsLoading(true);
+    const supabase = createClient();
+
+    // Get latest message per patient with unread count
     const { data, error } = await supabase
-      .from('telegram_conversations')
-      .select('*')
-      .order('last_message_at', { ascending: false });
+      .from('mensajes_n8n')
+      .select(`
+                patient_id,
+                content,
+                direction,
+                channel,
+                created_at,
+                read_at,
+                patients!inner (
+                    id,
+                    full_name,
+                    first_name,
+                    last_name,
+                    avatar_url
+                )
+            `)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching conversations:', error);
+      setIsLoading(false);
       return;
     }
 
-    setConversations(data || []);
-    setLoading(false);
-  }, [supabase]);
+    // Group by patient and get latest message + unread count
+    const conversationMap = new Map<string, Conversation>();
 
-  useEffect(() => {
-    fetchConversations();
+    (data || []).forEach((msg: any) => {
+      const patientId = msg.patient_id;
+      if (!patientId) return;
 
-    // Suscribirse a cambios en tiempo real
-    const channel = supabase
-      .channel('telegram_conversations_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'telegram_conversations',
-        },
-        () => {
-          fetchConversations();
-        }
-      )
-      .subscribe();
+      const existing = conversationMap.get(patientId);
+      const isUnread = msg.direction === 'inbound' && !msg.read_at;
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, fetchConversations]);
+      if (!existing) {
+        const patient = msg.patients;
+        const patientName = patient?.full_name ||
+          `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim() ||
+          'Sin nombre';
 
-  const toggleAI = async (conversationId: string, enabled: boolean) => {
-    const { error } = await supabase
-      .from('telegram_conversations')
-      .update({ is_ai_enabled: enabled })
-      .eq('id', conversationId);
+        conversationMap.set(patientId, {
+          patient_id: patientId,
+          patient_name: patientName,
+          patient_avatar: patient?.avatar_url,
+          last_message: msg.content || '',
+          last_message_at: msg.created_at,
+          last_message_direction: msg.direction,
+          channel: msg.channel || 'whatsapp',
+          unread_count: isUnread ? 1 : 0,
+          ai_enabled: true
+        });
+      } else if (isUnread) {
+        existing.unread_count += 1;
+      }
+    });
 
-    if (error) {
-      console.error('Error toggling AI:', error);
-      return false;
+    let result = Array.from(conversationMap.values());
+
+    // Apply filters
+    if (filter.channel !== 'all') {
+      result = result.filter(c => c.channel === filter.channel);
+    }
+    if (filter.status === 'unread') {
+      result = result.filter(c => c.unread_count > 0);
+    } else if (filter.status === 'read') {
+      result = result.filter(c => c.unread_count === 0);
+    }
+    if (filter.search) {
+      const search = filter.search.toLowerCase();
+      result = result.filter(c => c.patient_name.toLowerCase().includes(search));
     }
 
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === conversationId ? { ...c, is_ai_enabled: enabled } : c
+    // Sort by last message (most recent first)
+    result.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+
+    setConversations(result);
+    setIsLoading(false);
+  }, [filter]);
+
+  // Mark messages as read
+  const markAsRead = async (patientId: string) => {
+    const supabase = createClient();
+
+    await supabase
+      .from('mensajes_n8n')
+      .update({ read_at: new Date().toISOString() })
+      .eq('patient_id', patientId)
+      .is('read_at', null)
+      .eq('direction', 'inbound');
+
+    // Update local state
+    setConversations(prev =>
+      prev.map(c =>
+        c.patient_id === patientId
+          ? { ...c, unread_count: 0 }
+          : c
       )
     );
-    return true;
   };
 
-  return { conversations, loading, toggleAI, refetch: fetchConversations };
-}
-
-export function useMessages(sessionId: string | null) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(false);
-  const supabase = createClient();
-
-  const fetchMessages = useCallback(async () => {
-    if (!sessionId) {
-      setMessages([]);
-      return;
-    }
-
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('n8n_chat_histories')
-      .select('*')
-      .eq('session_id', sessionId)
-      .order('id', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching messages:', error);
-      setLoading(false);
-      return;
-    }
-
-    setMessages(data || []);
-    setLoading(false);
-  }, [sessionId, supabase]);
-
-  useEffect(() => {
-    fetchMessages();
-
-    if (!sessionId) return;
-
-    // Suscribirse a nuevos mensajes en tiempo real
-    const channel = supabase
-      .channel(`messages_${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'n8n_chat_histories',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as ChatMessage]);
-        }
+  // Toggle AI for a conversation
+  const toggleAI = (patientId: string, enabled: boolean) => {
+    setConversations(prev =>
+      prev.map(c =>
+        c.patient_id === patientId
+          ? { ...c, ai_enabled: enabled }
+          : c
       )
+    );
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  // Real-time subscription for new messages
+  useEffect(() => {
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel('conversations-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'mensajes_n8n'
+      }, () => {
+        // Refetch conversations when new message arrives
+        fetchConversations();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId, supabase, fetchMessages]);
+  }, [fetchConversations]);
 
-  return { messages, loading, refetch: fetchMessages };
+  return {
+    conversations,
+    isLoading,
+    filter,
+    setFilter,
+    markAsRead,
+    toggleAI
+  };
 }

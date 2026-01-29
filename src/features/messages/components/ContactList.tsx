@@ -1,58 +1,126 @@
+'use client';
+
 import React from 'react';
-import { Patient } from '@/features/patients/types';
+import { Conversation, ChannelType } from '../types';
 import { cn } from '@/lib/utils';
-import { Search } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+// Channel badge colors
+const channelColors: Record<ChannelType, string> = {
+    whatsapp: 'bg-green-500',
+    telegram: 'bg-blue-500',
+    instagram: 'bg-pink-500',
+    email: 'bg-amber-500',
+    sms: 'bg-purple-500'
+};
 
 interface ContactListProps {
-    patients: Patient[];
+    conversations: Conversation[];
     selectedPatientId?: string;
     onSelect: (patientId: string) => void;
+    isLoading?: boolean;
 }
 
-export function ContactList({ patients, selectedPatientId, onSelect }: ContactListProps) {
-    const [search, setSearch] = React.useState('');
-
-    const filtered = patients.filter(p =>
-        p.first_name.toLowerCase().includes(search.toLowerCase()) ||
-        p.last_name.toLowerCase().includes(search.toLowerCase())
-    );
-
-    return (
-        <div className="w-80 border-r border-slate-200 bg-white flex flex-col h-full rounded-l-2xl overflow-hidden">
-            <div className="p-4 border-b border-slate-100">
-                <h2 className="font-bold text-slate-800 mb-2">Mensajes</h2>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        placeholder="Buscar paciente..."
-                        className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary-100"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                    />
+export function ContactList({ conversations, selectedPatientId, onSelect, isLoading }: ContactListProps) {
+    if (isLoading) {
+        return (
+            <div className="w-full md:w-80 border-r border-slate-200 bg-white flex flex-col h-full">
+                <div className="p-4 border-b border-slate-100">
+                    <h2 className="font-bold text-slate-800">Conversaciones</h2>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-pulse text-slate-400">Cargando...</div>
                 </div>
             </div>
+        );
+    }
+
+    if (conversations.length === 0) {
+        return (
+            <div className="w-full md:w-80 border-r border-slate-200 bg-white flex flex-col h-full">
+                <div className="p-4 border-b border-slate-100">
+                    <h2 className="font-bold text-slate-800">Conversaciones</h2>
+                </div>
+                <div className="flex-1 flex items-center justify-center text-slate-400 text-sm p-4 text-center">
+                    No hay conversaciones que coincidan con los filtros
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full md:w-80 border-r border-slate-200 bg-white flex flex-col h-full">
+            <div className="p-4 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800">Conversaciones</h2>
+                <p className="text-xs text-slate-500">{conversations.length} contactos</p>
+            </div>
+
             <div className="overflow-y-auto flex-1">
-                {filtered.map(patient => (
+                {conversations.map(conv => (
                     <button
-                        key={patient.id}
-                        onClick={() => onSelect(patient.id)}
+                        key={conv.patient_id}
+                        onClick={() => onSelect(conv.patient_id)}
                         className={cn(
-                            "w-full p-4 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50",
-                            selectedPatientId === patient.id && "bg-primary-50 hover:bg-primary-100 border-primary-100" // active state
+                            "w-full p-3 flex items-start gap-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 cursor-pointer relative",
+                            selectedPatientId === conv.patient_id && "bg-primary-50 hover:bg-primary-100 border-l-4 border-l-primary-500"
                         )}
                     >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold shrink-0">
-                            {patient.first_name[0]}{patient.last_name[0]}
+                        {/* Avatar with channel indicator */}
+                        <div className="relative shrink-0">
+                            {conv.patient_avatar ? (
+                                <img
+                                    src={conv.patient_avatar}
+                                    alt={conv.patient_name}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold text-sm">
+                                    {conv.patient_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </div>
+                            )}
+                            {/* Channel indicator */}
+                            <div className={cn(
+                                "absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white",
+                                channelColors[conv.channel]
+                            )} />
                         </div>
+
+                        {/* Content */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-baseline mb-0.5">
-                                <span className="font-semibold text-slate-800 truncate">{patient.first_name} {patient.last_name}</span>
-                                {/* <span className="text-xs text-slate-400">12:30</span> */}
+                            <div className="flex justify-between items-start mb-0.5">
+                                <span className={cn(
+                                    "font-semibold text-slate-800 truncate text-sm",
+                                    conv.unread_count > 0 && "font-bold"
+                                )}>
+                                    {conv.patient_name}
+                                </span>
+                                <span className="text-[10px] text-slate-400 shrink-0 ml-2">
+                                    {formatDistanceToNow(new Date(conv.last_message_at), {
+                                        addSuffix: false,
+                                        locale: es
+                                    })}
+                                </span>
                             </div>
-                            <p className="text-xs text-slate-500 truncate">
-                                {patient.phone || 'Sin WhatsApp'}
+                            <p className={cn(
+                                "text-xs truncate max-w-[180px]",
+                                conv.unread_count > 0 ? "text-slate-700 font-medium" : "text-slate-500"
+                            )}>
+                                {conv.last_message_direction === 'outbound' && (
+                                    <span className="text-primary-500">Tú: </span>
+                                )}
+                                {conv.last_message || 'Sin mensajes'}
                             </p>
                         </div>
+
+                        {/* Unread badge */}
+                        {conv.unread_count > 0 && (
+                            <div className="shrink-0">
+                                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center inline-block">
+                                    {conv.unread_count > 99 ? '99+' : conv.unread_count}
+                                </span>
+                            </div>
+                        )}
                     </button>
                 ))}
             </div>

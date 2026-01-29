@@ -35,7 +35,7 @@ export function useMessages(patientId?: string) {
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
-                table: 'messages',
+                table: 'mensajes_n8n',
                 filter: `patient_id=eq.${patientId}`
             }, (payload) => {
                 setMessages(prev => [...prev, payload.new as Message]);
@@ -47,7 +47,7 @@ export function useMessages(patientId?: string) {
         };
     }, [patientId, fetchMessages, fetchTemplates]);
 
-    const send = async (content: string, channel: 'whatsapp' | 'email' | 'sms') => {
+    const send = async (content: string, channel: 'whatsapp' | 'telegram' | 'instagram' | 'email' | 'sms') => {
         if (!patientId) return;
         // Optimistic update
         const tempId = crypto.randomUUID();
