@@ -84,7 +84,27 @@ export function useMessages(sessionId?: string) {
             }, (payload) => {
                 const newMsg = payload.new as N8nDbMessage;
                 if (newMsg.message?.content) {
-                    setMessages(prev => [...prev, parseN8nMessage(newMsg)]);
+                    const parsedMsg = parseN8nMessage(newMsg);
+
+                    // Avoid duplicates: check if message with same content exists recently (within 5 seconds)
+                    setMessages(prev => {
+                        const isDuplicate = prev.some(existing =>
+                            existing.content === parsedMsg.content &&
+                            Math.abs(new Date(existing.created_at).getTime() - new Date(parsedMsg.created_at).getTime()) < 5000
+                        );
+
+                        if (isDuplicate) {
+                            // Replace optimistic message with real one (has proper DB id)
+                            return prev.map(msg =>
+                                msg.content === parsedMsg.content &&
+                                    Math.abs(new Date(msg.created_at).getTime() - new Date(parsedMsg.created_at).getTime()) < 5000
+                                    ? parsedMsg
+                                    : msg
+                            );
+                        }
+
+                        return [...prev, parsedMsg];
+                    });
                 }
             })
             .subscribe();
@@ -97,8 +117,7 @@ export function useMessages(sessionId?: string) {
     const send = async (content: string, channel: ChannelType) => {
         if (!sessionId) return;
 
-        // For now, just add optimistic message
-        // The actual sending would need to go through n8n webhook
+        // Optimistic update
         const tempId = crypto.randomUUID();
         const newMessage: Message = {
             id: tempId,
@@ -112,19 +131,15 @@ export function useMessages(sessionId?: string) {
 
         setMessages(prev => [...prev, newMessage]);
 
-        // TODO: Send to n8n webhook or directly to WhatsApp API
-        // For now, we'll insert directly to DB for demo
-        const supabase = createClient();
-        await supabase
-            .from('mensajes_n8n')
-            .insert({
-                session_id: sessionId,
-                message: {
-                    type: 'ai',
-                    content: content
-                },
-                channel: channel
-            });
+        // Call server action
+        const { sendMessage } = await import('../actions/messageActions');
+        await sendMessage({
+            patient_id: sessionId,
+            content: content,
+            direction: 'outbound',
+            channel: channel,
+            sent_by: null // Could add user ID here if available
+        });
     };
 
     return { messages, templates, isLoading, send };

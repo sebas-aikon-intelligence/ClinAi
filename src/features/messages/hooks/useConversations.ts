@@ -72,20 +72,24 @@ export function useConversations(): ConversationsResult {
       const isInbound = messageType === 'human';
       const isUnread = isInbound && !msg.read_at;
 
+      // Get AI status from joined patient data
+      const patientData = (msg as any).patients;
+      const aiEnabled = patientData?.ai_enabled ?? true;
+
       if (!existing) {
         // Use patient name from JOIN, fallback to session_id
-        const patientName = (msg as any).patients?.full_name || `Chat ${sessionId.substring(0, 8)}...`;
+        const patientName = patientData?.full_name || `Chat ${sessionId.substring(0, 8)}...`;
 
         conversationMap.set(sessionId, {
           patient_id: sessionId, // Using session_id as the conversation ID
           patient_name: patientName,
-          patient_avatar: undefined,
+          patient_avatar: patientData?.avatar_url,
           last_message: messageContent.substring(0, 100),
           last_message_at: msg.created_at,
           last_message_direction: isInbound ? 'inbound' : 'outbound',
           channel: (msg.channel as ChannelType) || 'whatsapp',
           unread_count: isUnread ? 1 : 0,
-          ai_enabled: true
+          ai_enabled: aiEnabled
         });
       } else if (isUnread) {
         existing.unread_count += 1;
@@ -140,7 +144,8 @@ export function useConversations(): ConversationsResult {
   };
 
   // Toggle AI for a conversation
-  const toggleAI = (sessionId: string, enabled: boolean) => {
+  const toggleAI = async (sessionId: string, enabled: boolean) => {
+    // Optimistic update
     setConversations(prev =>
       prev.map(c =>
         c.patient_id === sessionId
@@ -148,8 +153,22 @@ export function useConversations(): ConversationsResult {
           : c
       )
     );
-  };
 
+    // Call server action
+    const { togglePatientAI } = await import('../actions/messageActions');
+    const success = await togglePatientAI(sessionId, enabled);
+
+    // Revert if failed
+    if (!success) {
+      setConversations(prev =>
+        prev.map(c =>
+          c.patient_id === sessionId
+            ? { ...c, ai_enabled: !enabled }
+            : c
+        )
+      );
+    }
+  };
   // Initial fetch
   useEffect(() => {
     fetchConversations();
