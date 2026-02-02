@@ -36,7 +36,7 @@ export function Sidebar() {
                     <Activity className="w-6 h-6 text-white" />
                 </div>
                 <span className="font-bold text-xl text-slate-800 tracking-tight">
-                    ClinAi
+                    VeterinarIA
                 </span>
             </div>
 
