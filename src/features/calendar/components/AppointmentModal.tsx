@@ -37,8 +37,14 @@ export function AppointmentModal({ isOpen, onClose, appointment }: AppointmentMo
             const start = new Date(appointment.start_time);
             const end = new Date(appointment.end_time);
             setDate(start.toISOString().split('T')[0]);
-            setStartTime(start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
-            setEndTime(end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+            // Format time as HH:MM for input[type="time"]
+            const formatTimeForInput = (d: Date) => {
+                const hours = d.getHours().toString().padStart(2, '0');
+                const minutes = d.getMinutes().toString().padStart(2, '0');
+                return `${hours}:${minutes}`;
+            };
+            setStartTime(formatTimeForInput(start));
+            setEndTime(formatTimeForInput(end));
             setType(appointment.type ?? 'consultation');
             setNotes(appointment.notes ?? '');
             setIsEditing(false); // Reset edit mode on new appointment

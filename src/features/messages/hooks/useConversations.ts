@@ -11,6 +11,8 @@ interface ConversationsResult {
   setFilter: (filter: MessagesFilter) => void;
   markAsRead: (sessionId: string) => Promise<void>;
   toggleAI: (sessionId: string, enabled: boolean) => void;
+  handoffToHuman: (sessionId: string, reason?: string) => Promise<void>;
+  returnToAI: (sessionId: string) => Promise<void>;
 }
 
 // Parse n8n message format
@@ -32,29 +34,30 @@ export function useConversations(): ConversationsResult {
   const [filter, setFilter] = useState<MessagesFilter>({
     channel: 'all',
     status: 'all',
-    search: ''
+    search: '',
+    assignedTo: 'all'
   });
 
   const fetchConversations = useCallback(async () => {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Get all messages with patient info via JOIN
-    const { data, error } = await supabase
+    // Get all messages with patient info via JOIN (including AI settings)
+    const { data: messagesData, error: messagesError } = await supabase
       .from('mensajes_n8n')
       .select(`
-        id, 
-        session_id, 
-        message, 
-        created_at, 
-        read_at, 
+        id,
+        session_id,
+        message,
+        created_at,
+        read_at,
         channel,
-        patients!fk_mensajes_patient(full_name, email, phone)
+        patients!fk_mensajes_patient(full_name, email, phone, ai_enabled, assigned_to_human, handoff_reason, handoff_at)
       `)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching conversations:', error);
+    if (messagesError) {
+      console.error('Error fetching conversations:', messagesError);
       setIsLoading(false);
       return;
     }
@@ -62,7 +65,7 @@ export function useConversations(): ConversationsResult {
     // Group by session_id and get latest message + unread count
     const conversationMap = new Map<string, Conversation>();
 
-    (data || []).forEach((msg: N8nMessage) => {
+    (messagesData || []).forEach((msg: N8nMessage) => {
       const sessionId = msg.session_id;
       if (!sessionId || !msg.message) return;
 
@@ -72,9 +75,23 @@ export function useConversations(): ConversationsResult {
       const isInbound = messageType === 'human';
       const isUnread = isInbound && !msg.read_at;
 
-      // Get AI status from joined patient data
-      const patientData = (msg as any).patients;
+      // Get patient data from JOIN (includes AI settings)
+      const patientData = (msg as unknown as { patients: {
+        full_name?: string;
+        email?: string;
+        phone?: string;
+        avatar_url?: string;
+        ai_enabled?: boolean;
+        assigned_to_human?: boolean;
+        handoff_reason?: string | null;
+        handoff_at?: string | null;
+      } | null }).patients;
+
+      // Get AI settings from patient (with defaults)
       const aiEnabled = patientData?.ai_enabled ?? true;
+      const assignedToHuman = patientData?.assigned_to_human ?? false;
+      const handoffReason = patientData?.handoff_reason ?? null;
+      const handoffAt = patientData?.handoff_at ?? null;
 
       if (!existing) {
         // Use patient name from JOIN, fallback to session_id
@@ -87,9 +104,12 @@ export function useConversations(): ConversationsResult {
           last_message: messageContent.substring(0, 100),
           last_message_at: msg.created_at,
           last_message_direction: isInbound ? 'inbound' : 'outbound',
-          channel: (msg.channel as ChannelType) || 'whatsapp',
+          channel: (msg.channel as ChannelType) || 'telegram',
           unread_count: isUnread ? 1 : 0,
-          ai_enabled: aiEnabled
+          ai_enabled: aiEnabled,
+          assigned_to_human: assignedToHuman,
+          handoff_reason: handoffReason,
+          handoff_at: handoffAt
         });
       } else if (isUnread) {
         existing.unread_count += 1;
@@ -113,6 +133,12 @@ export function useConversations(): ConversationsResult {
         c.patient_name.toLowerCase().includes(search) ||
         c.last_message.toLowerCase().includes(search)
       );
+    }
+    // Filter by assignment (human vs AI)
+    if (filter.assignedTo === 'human') {
+      result = result.filter(c => c.assigned_to_human);
+    } else if (filter.assignedTo === 'ai') {
+      result = result.filter(c => !c.assigned_to_human);
     }
 
     // Sort by last message (most recent first)
@@ -169,6 +195,73 @@ export function useConversations(): ConversationsResult {
       );
     }
   };
+
+  // Hand off conversation to human
+  const handoffToHuman = async (sessionId: string, reason?: string) => {
+    // Optimistic update
+    setConversations(prev =>
+      prev.map(c =>
+        c.patient_id === sessionId
+          ? {
+              ...c,
+              assigned_to_human: true,
+              ai_enabled: false,
+              handoff_reason: reason || 'Manual handoff',
+              handoff_at: new Date().toISOString()
+            }
+          : c
+      )
+    );
+
+    // Call server action
+    const { handoffToHuman: handoffAction } = await import('../actions/messageActions');
+    const success = await handoffAction(sessionId, reason);
+
+    // Revert if failed
+    if (!success) {
+      setConversations(prev =>
+        prev.map(c =>
+          c.patient_id === sessionId
+            ? { ...c, assigned_to_human: false, ai_enabled: true }
+            : c
+        )
+      );
+    }
+  };
+
+  // Return conversation to AI
+  const returnToAI = async (sessionId: string) => {
+    // Optimistic update
+    setConversations(prev =>
+      prev.map(c =>
+        c.patient_id === sessionId
+          ? {
+              ...c,
+              assigned_to_human: false,
+              ai_enabled: true,
+              handoff_reason: null,
+              handoff_at: null
+            }
+          : c
+      )
+    );
+
+    // Call server action
+    const { returnToAI: returnAction } = await import('../actions/messageActions');
+    const success = await returnAction(sessionId);
+
+    // Revert if failed
+    if (!success) {
+      setConversations(prev =>
+        prev.map(c =>
+          c.patient_id === sessionId
+            ? { ...c, assigned_to_human: true, ai_enabled: false }
+            : c
+        )
+      );
+    }
+  };
+
   // Initial fetch
   useEffect(() => {
     fetchConversations();
@@ -201,6 +294,8 @@ export function useConversations(): ConversationsResult {
     filter,
     setFilter,
     markAsRead,
-    toggleAI
+    toggleAI,
+    handoffToHuman,
+    returnToAI
   };
 }

@@ -1,6 +1,9 @@
 // Channel types supported
 export type ChannelType = 'whatsapp' | 'telegram' | 'instagram' | 'email' | 'sms';
 
+// Media types for multimedia messages
+export type MediaType = 'image' | 'audio' | 'file' | 'video';
+
 export interface Message {
   id: string;
   patient_id: string;
@@ -12,6 +15,10 @@ export interface Message {
   read_at?: string | null;
   sent_by?: string | null;
   external_message_id?: string | null;
+  // Multimedia support
+  media_type?: MediaType | null;
+  media_url?: string | null;
+  media_filename?: string | null;
 }
 
 export interface Conversation {
@@ -24,6 +31,10 @@ export interface Conversation {
   channel: ChannelType;
   unread_count: number;
   ai_enabled: boolean;
+  // Handoff support
+  assigned_to_human: boolean;
+  handoff_reason?: string | null;
+  handoff_at?: string | null;
 }
 
 export interface MessageTemplate {
@@ -57,4 +68,14 @@ export interface MessagesFilter {
   channel: ChannelType | 'all';
   status: 'all' | 'unread' | 'read';
   search: string;
+  assignedTo: 'all' | 'human' | 'ai';
+}
+
+// Input for sending media messages
+export interface SendMediaInput {
+  patient_id: string;
+  channel: ChannelType;
+  media_type: MediaType;
+  file: File;
+  caption?: string;
 }

@@ -101,14 +101,13 @@ export function CreateAppointmentModal({ isOpen, onClose, initialDate }: CreateA
             const startDateTime = new Date(`${date}T${startTime}:00`);
             const endDateTime = new Date(`${date}T${endTime}:00`);
 
-            // Note: title and notes fields require DB migration to work
-            // For now, only send fields that exist in the current schema
             await createAppointment({
                 patient_id: patientId,
                 start_time: startDateTime,
                 end_time: endDateTime,
-                type: type as 'consultation' | 'follow_up' | 'procedure' | 'emergency'
-                // title and notes disabled until migration is applied
+                type: type as 'consultation' | 'follow_up' | 'procedure' | 'emergency',
+                title: title || undefined,
+                notes: notes || undefined
             });
 
             toast.success('Cita agendada correctamente');

@@ -8,7 +8,7 @@ import { MessageInput } from './MessageInput';
 import { useConversations } from '../hooks/useConversations';
 import { useMessages } from '../hooks/useMessages';
 import { Conversation, ChannelType } from '../types';
-import { Menu, X, ArrowLeft, Bot, BotOff, User, Phone, Mail } from 'lucide-react';
+import { Menu, X, ArrowLeft, Bot, BotOff, User, Phone, Mail, UserCheck, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Channel config for header badge
@@ -21,7 +21,7 @@ const channelConfig: Record<ChannelType, { label: string; color: string }> = {
 };
 
 export default function MessagesView() {
-    const { conversations, isLoading, filter, setFilter, markAsRead, toggleAI } = useConversations();
+    const { conversations, isLoading, filter, setFilter, markAsRead, toggleAI, handoffToHuman, returnToAI } = useConversations();
     const [selectedPatientId, setSelectedPatientId] = useState<string | undefined>();
     const [mobileView, setMobileView] = useState<'filters' | 'contacts' | 'chat'>('contacts');
     const [showFiltersOnDesktop, setShowFiltersOnDesktop] = useState(true);
@@ -127,22 +127,49 @@ export default function MessagesView() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                {/* AI Toggle */}
-                                <button
-                                    onClick={() => toggleAI(currentConversation.patient_id, !currentConversation.ai_enabled)}
-                                    className={cn(
-                                        "p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-medium",
-                                        currentConversation.ai_enabled
-                                            ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                                    )}
-                                >
-                                    {currentConversation.ai_enabled ? (
-                                        <><Bot className="w-4 h-4" /> IA On</>
-                                    ) : (
-                                        <><BotOff className="w-4 h-4" /> IA Off</>
-                                    )}
-                                </button>
+                                {/* Handoff indicator */}
+                                {currentConversation.assigned_to_human && (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium">
+                                        <AlertCircle className="w-3.5 h-3.5" />
+                                        <span>Requiere atención</span>
+                                    </div>
+                                )}
+
+                                {/* AI Toggle / Return to AI button */}
+                                {currentConversation.assigned_to_human ? (
+                                    <button
+                                        onClick={() => returnToAI(currentConversation.patient_id)}
+                                        className="p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200"
+                                    >
+                                        <Bot className="w-4 h-4" /> Devolver a IA
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => toggleAI(currentConversation.patient_id, !currentConversation.ai_enabled)}
+                                            className={cn(
+                                                "p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-medium",
+                                                currentConversation.ai_enabled
+                                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                    : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                                            )}
+                                        >
+                                            {currentConversation.ai_enabled ? (
+                                                <><Bot className="w-4 h-4" /> IA On</>
+                                            ) : (
+                                                <><BotOff className="w-4 h-4" /> IA Off</>
+                                            )}
+                                        </button>
+                                        {/* Manual handoff button */}
+                                        <button
+                                            onClick={() => handoffToHuman(currentConversation.patient_id, 'Manual handoff')}
+                                            className="p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-medium bg-amber-50 text-amber-600 hover:bg-amber-100"
+                                            title="Pasar a humano"
+                                        >
+                                            <UserCheck className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                )}
 
                                 {/* View profile */}
                                 <button className="p-2 rounded-lg hover:bg-slate-100 text-slate-500">
@@ -161,6 +188,7 @@ export default function MessagesView() {
                             disabled={messagesLoading}
                             aiEnabled={currentConversation.ai_enabled}
                             onToggleAI={() => toggleAI(currentConversation.patient_id, !currentConversation.ai_enabled)}
+                            sessionId={currentConversation.patient_id}
                         />
                     </>
                 ) : (

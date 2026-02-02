@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { MessagesFilter, ChannelType } from '../types';
-import { Search, MessageSquare, Bot, BotOff } from 'lucide-react';
+import { Search, Bot, User, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Channel icons - using Lucide icons
@@ -75,6 +75,49 @@ export function ChannelFilters({ filter, onFilterChange, unreadCount }: ChannelF
                                 {unreadCount > 99 ? '99+' : unreadCount}
                             </span>
                         )}
+                    </button>
+                </div>
+            </div>
+
+            {/* Assignment Filter (Human vs AI) */}
+            <div className="px-3 pb-3">
+                <p className="px-1 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Asignación</p>
+                <div className="flex rounded-lg bg-slate-100 p-1">
+                    <button
+                        onClick={() => onFilterChange({ ...filter, assignedTo: 'all' })}
+                        className={cn(
+                            "flex-1 px-2 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1",
+                            filter.assignedTo === 'all'
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
+                        )}
+                    >
+                        <Users className="w-3 h-3" />
+                        Todos
+                    </button>
+                    <button
+                        onClick={() => onFilterChange({ ...filter, assignedTo: 'human' })}
+                        className={cn(
+                            "flex-1 px-2 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1",
+                            filter.assignedTo === 'human'
+                                ? "bg-amber-100 text-amber-700 shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
+                        )}
+                    >
+                        <User className="w-3 h-3" />
+                        Humano
+                    </button>
+                    <button
+                        onClick={() => onFilterChange({ ...filter, assignedTo: 'ai' })}
+                        className={cn(
+                            "flex-1 px-2 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1",
+                            filter.assignedTo === 'ai'
+                                ? "bg-green-100 text-green-700 shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
+                        )}
+                    >
+                        <Bot className="w-3 h-3" />
+                        IA
                     </button>
                 </div>
             </div>

@@ -71,9 +71,29 @@ export async function createAppointment(input: CreateAppointmentInput): Promise<
 export async function updateAppointment(id: string, input: UpdateAppointmentInput): Promise<Appointment | null> {
     const supabase = await createClient();
 
+    // Convert Date objects to ISO strings for Supabase
+    const updateData: Record<string, unknown> = {};
+
+    if (input.title !== undefined) updateData.title = input.title;
+    if (input.notes !== undefined) updateData.notes = input.notes;
+    if (input.type !== undefined) updateData.type = input.type;
+    if (input.status !== undefined) updateData.status = input.status;
+    if (input.patient_id !== undefined) updateData.patient_id = input.patient_id;
+    if (input.doctor_id !== undefined) updateData.doctor_id = input.doctor_id;
+    if (input.start_time !== undefined) {
+        updateData.start_time = input.start_time instanceof Date
+            ? input.start_time.toISOString()
+            : input.start_time;
+    }
+    if (input.end_time !== undefined) {
+        updateData.end_time = input.end_time instanceof Date
+            ? input.end_time.toISOString()
+            : input.end_time;
+    }
+
     const { data, error } = await supabase
         .from('appointments')
-        .update(input)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
