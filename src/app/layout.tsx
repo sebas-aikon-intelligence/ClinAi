@@ -7,8 +7,8 @@ import { Toaster } from 'sonner'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ClinAi - Luxury Clinical Management',
-  description: 'The premier SaaS for modern health clinics.',
+  title: 'VeterinarIA - Escala tu veterinaria al siguiente nivel',
+  description: 'El CRM perfecto para tu clínica veterinaria.',
 }
 
 export default function RootLayout({
